@@ -7,6 +7,7 @@ import usersRouter from './router/users.js';
 import tasksRouter from './router/tasks.js';
 import connectDB from './config/db.js';
 import activityRouter from './router/activity.js';
+import accountRouter from './router/accounts.js';
 dotenv.config();
 
 
@@ -48,6 +49,7 @@ app.use(express.static('uploads'));
 
 app.use("/api/users", usersRouter)
 app.use("/api/activity", activityRouter)
+app.use("/api/account", accountRouter)
 app.use("/api/tasks", tasksRouter)
 
 
