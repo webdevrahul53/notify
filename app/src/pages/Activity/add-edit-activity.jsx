@@ -1,5 +1,5 @@
 import "../../styles/Drawer.css";
-import { AccountTree, Add, Close, Save } from '@mui/icons-material'
+import { AccountTree, Add, Close, PlaylistAdd, Save } from '@mui/icons-material'
 import { Button, Checkbox, FormControlLabel, IconButton, TextField, Typography } from '@mui/material'
 import React from 'react'
 import { RippleEffect } from "../../utilities/ripple";
@@ -33,10 +33,10 @@ const AddEditActivity = (props) => {
         
         try {
             let id = props?.activity?._id
-            let url = id ? `/prcss/update?id=${id}` : `/prcss/create`
-            const result = await axiosInstance[id ? "put":"post"](url, data).then(res => res.data)
+            let url = id ? `/activity/${id}` : `/activity`
+            const result = await axiosInstance[id ? "patch":"post"](url, data).then(res => res.data)
             
-            if(result.statuscode === 201){
+            if(result.status === 200){
                 props.onClose(); // Close the drawer
                 dispatch(showSnackbar({ message: result.message, severity: 'success', }));
             }
@@ -56,7 +56,7 @@ const AddEditActivity = (props) => {
         <section className="drawer-container">
             <div className="drawer-header">
                 <Typography className="title" color="primary">
-                    <AccountTree color="primary" style={{ fontSize: "2rem", margin: "-10px 0" }} /> {props.activity != null ? 'EDIT ACTIVITY' : 'ADD ACTIVITY'}
+                    <PlaylistAdd color="primary" style={{ fontSize: "2rem", margin: "-10px 0" }} /> {props.activity != null ? 'EDIT ACTIVITY' : 'ADD ACTIVITY'}
                 </Typography>
                 <IconButton onClick={() => props.onClose()}> <Close color="error" width={300} /> </IconButton>
             </div>

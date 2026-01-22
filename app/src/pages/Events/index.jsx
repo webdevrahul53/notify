@@ -2,7 +2,6 @@ import "../../styles/InspectionEntryForm.css";
 import React, { Suspense } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import EditSquareIcon from '@mui/icons-material/EditSquare';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 import { DataGrid } from '@mui/x-data-grid';
 import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, LinearProgress, Menu, MenuItem } from '@mui/material';
@@ -10,7 +9,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Assignment, CorporateFare } from "@mui/icons-material";
 import { DataGridStyle } from "../../utilities/datagridStyle";
 // import { useDispatch } from "react-redux";
-import Loader from "../../components/loader";
 import moment from "moment";
 import axiosInstance from "../../utilities/axiosInstance";
 
@@ -23,16 +21,12 @@ const TableHeaderFormat = (props) => {
         return params.api.getRowIndexRelativeToVisibleRows(params.id) + 1 + (props.currentPage * props.pageSize);
       },  
     },
-    { field: 'servicePo', headerName: 'Service PO', width: 120 },
-    { field: 'qcMaterialCode', headerName: 'Material', width: 120 },
-    { field: 'materialPo', headerName: 'Material PO', width: 120 },
-    { field: 'qcProcessName', headerName: 'Process', width: 80 },
-    { field: 'qcPhaseName', headerName: 'Phase', width: 100 },
-    { field: 'qcRouteCode', headerName: 'Route', width: 80 },
-    { field: 'sample', headerName: 'Sample', width: 100 },
-    // { field: 'qcMpoVendor', headerName: 'Vendor', width: 120 },
-    // { field: 'qcMpoPlant', headerName: 'Plant', width: 200 },
-    // { field: 'location', headerName: 'Location', width: 200 },
+    { field: 'scheduledOn', headerName: 'Scheduled On', width: 120 },
+    { field: 'accountId', headerName: 'Account', width: 120 },
+    { field: 'activityId', headerName: 'Activity', width: 120 },
+    { field: 'subject', headerName: 'Subject', width: 80 },
+    { field: 'title', headerName: 'Title', width: 100 },
+    { field: 'content', headerName: 'Content', width: 80 },
     { field: 'status', headerName: 'Status', width: 80 },
     { field: 'createdAtITC', headerName: 'Created At', width: 180, renderCell: (params) => moment(params.value, 'DD-MM-YYYY hh:mm').format('DD-MM-YYYY hh:mm A')},
     { field: 'updatedAtITC', headerName: 'Updated At', width: 180, renderCell: params => moment(params.value, 'DD-MM-YYYY hh:mm').format('DD-MM-YYYY hh:mm A') },

@@ -14,6 +14,14 @@ const auth = createSlice({
     /* =====================
        LOGIN / REFRESH
     ====================== */
+    setToken: (state, action) => {
+      const { accessToken } = action.payload;
+
+      state.accessToken = accessToken;
+      state.isAuthenticated = true;
+      state.loading = false;
+    },
+
     setCredentials: (state, action) => {
       const { accessToken, user } = action.payload;
 
@@ -43,6 +51,7 @@ const auth = createSlice({
 });
 
 export const {
+  setToken,
   setCredentials,
   logout,
   setLoading,

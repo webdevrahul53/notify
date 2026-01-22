@@ -26,6 +26,7 @@ import { HiOutlineViewGrid } from "react-icons/hi";
 import { Drawer, DrawerHeader } from "./Drawer";
 import { logout } from "../redux/slices/auth";
 import { showSnackbar } from "../redux/slices/snackbar";
+import axiosInstance from "../utilities/axiosInstance";
 
 
 const Header = React.lazy(() => import('./Header'));
@@ -49,9 +50,18 @@ export default function MiniDrawer() {
   };
 
   const handleLogout = async () => {
-    dispatch(logout());
-    dispatch(showSnackbar({ message: "Logged Out Successfully", severity: 'info', }));
-    navigate('/login');
+    try {
+      const response = await axiosInstance.get("/users/logout");
+      console.log(response)
+      if(response.status === 200){
+        dispatch(logout());
+        dispatch(showSnackbar({ message: "Logged Out Successfully", severity: 'info', }));
+        navigate('/login');
+      }
+
+    }catch (error) {
+      console.log(error)
+    }
   }
 
   const handleAction = (text) => () => {

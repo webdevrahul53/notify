@@ -51,4 +51,17 @@ const accountList = async (req, res) => {
     }
 };
 
-export { createAccount, updateAccount, accountList };
+
+const deleteAccount = async (req, res) => {
+    try {
+        const selectedIds = req.body; // Expecting an array of IDs to delete
+        const deletedAccount = await Account.updateMany({ _id: { $in: selectedIds } }, { status: false });
+        res.status(200).json({ status: 200, message: "Accounts deleted successfully", data: deletedAccount });
+    } catch (error) {
+        res.status(500).json({ status: 500, message: "Error deleting activities", error: error.message });
+    }
+}   
+
+
+
+export { createAccount, updateAccount, accountList, deleteAccount };

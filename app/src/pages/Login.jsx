@@ -30,8 +30,6 @@ const Login = () => {
 
       if (response.status === 200) {
         dispatch(setCredentials(response.data))
-        localStorage.setItem("accessToken", response.data.accessToken);
-        localStorage.setItem("refreshToken", response.data.refreshToken);
         dispatch(showSnackbar({ message: "Logged In Successfully", severity: 'success', }));
         navigate("/");
         

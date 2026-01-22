@@ -6,6 +6,9 @@ import { Provider } from 'react-redux';
 import store, { persistor } from './redux/store';
 import { PersistGate } from 'redux-persist/integration/react';
 import MUISnackbar from './components/MUISnackbar.jsx';
+import { injectStore } from './redux/storeAccessor.js';
+
+injectStore(store)
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

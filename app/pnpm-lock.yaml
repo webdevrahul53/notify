@@ -38,6 +38,9 @@ importers:
       moment:
         specifier: ^2.30.1
         version: 2.30.1
+      moment-timezone:
+        specifier: ^0.6.0
+        version: 0.6.0
       react:
         specifier: ^19.1.0
         version: 19.2.3
@@ -1283,6 +1286,9 @@ packages:
 
   minimatch@3.1.2:
     resolution: {integrity: sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==}
+
+  moment-timezone@0.6.0:
+    resolution: {integrity: sha512-ldA5lRNm3iJCWZcBCab4pnNL3HSZYXVb/3TYr75/1WCTWYuTqYUb5f/S384pncYjJ88lbO8Z4uPDvmoluHJc8Q==}
 
   moment@2.30.1:
     resolution: {integrity: sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==}
@@ -2705,6 +2711,10 @@ snapshots:
   minimatch@3.1.2:
     dependencies:
       brace-expansion: 1.1.12
+
+  moment-timezone@0.6.0:
+    dependencies:
+      moment: 2.30.1
 
   moment@2.30.1: {}
 

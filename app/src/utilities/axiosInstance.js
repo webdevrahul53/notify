@@ -1,4 +1,6 @@
 import axios from "axios";
+import { getStore } from "../redux/storeAccessor";
+import { logout, setToken } from "../redux/slices/auth";
 
 const env = import.meta.env.VITE_ENV || 'dev';
 const appenv = import.meta.env.VITE_APP_ENV || 'quality';
@@ -16,7 +18,7 @@ const baseUrl = {
 
 const axiosInstance = axios.create({
     baseURL: baseUrl[env][appenv],
-    // withCredentials: true, // ✅ crucial for cookies
+    withCredentials: true, // ✅ crucial for cookies
 });
 
 /* ===============================
@@ -24,7 +26,8 @@ const axiosInstance = axios.create({
 ================================ */
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
+    const store = getStore();
+    const token = store?.getState()?.auth?.accessToken;
 
     if (token && config.method !== "options") {
       config.headers.Authorization = `Bearer ${token}`;
@@ -38,42 +41,35 @@ axiosInstance.interceptors.request.use(
 /* ===============================
    RESPONSE INTERCEPTOR
 ================================ */
-
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const store = getStore();
     const originalRequest = error.config;
 
-    console.log(error)
-    if(error.status === 401) {
-      const refreshToken = localStorage.getItem("refreshToken");
-      console.log(refreshToken)
-      if(refreshToken){
-          try {
-              const response = await axiosInstance.post("/users/refresh-token", { refreshToken });
-              console.log(response)
-              const { accessToken } = response.data;
-              localStorage.setItem("accessToken", accessToken);
-              originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
-              return axiosInstance(originalRequest);
-          } catch (err) {
-              console.error("Refresh token is invalid", err);
-              localStorage.removeItem("accessToken");
-              localStorage.removeItem("refreshToken");
-              window.location.href = "/login";
-          }
-      } else {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          window.location.href = "/login";
-      }
+    const status = error?.response?.status;
 
+    if (status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
         
+        const response = await axios.post(`${baseUrl[env][appenv]}/users/refresh-token`, {}, { withCredentials: true });
 
+        store.dispatch(setToken(response.data));
+
+        originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`;
+        return axiosInstance(originalRequest);
+
+      } catch (err) {
+        console.log(err)
+        store.dispatch(logout());
+        // window.location.href = "/login";
+        return Promise.reject(err);
+      }
     }
 
-    
-    
+    return Promise.reject(error);
   }
 );
 
