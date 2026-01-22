@@ -16,7 +16,7 @@ const AddEditAccount = (props) => {
     const { register, handleSubmit, reset, formState: { errors } } = useForm({
         defaultValues: {
             accountName: "",
-            email: "",
+            accountEmail: "",
             dateOfBirth: "",
             phoneNumber: "",
             location: "",
@@ -34,15 +34,15 @@ const AddEditAccount = (props) => {
     const onSubmit = async (data) => {
         // console.log(user)
         // console.log(data);
-        data.createdby = user?._id;
-        data.status = "Active";
+        // data.createdby = user?._id;
+        // data.status = "Active";
         
         try {
             let id = props?.account?._id
-            let url = id ? `/prcss/update?id=${id}` : `/prcss/create`
+            let url = id ? `/account/${id}` : `/account`
             const result = await axiosInstance[id ? "put":"post"](url, data).then(res => res.data)
             
-            if(result.statuscode === 201){
+            if(result.status === 200){
                 props.onClose(); // Close the drawer
                 dispatch(showSnackbar({ message: result.message, severity: 'success', }));
             }
@@ -75,14 +75,14 @@ const AddEditAccount = (props) => {
                 </div>
                 <div className="input-container"> 
                     <TextField label="Email" variant="filled" fullWidth 
-                        {...register("email", { required: "Email is required" })}
-                        error={!!errors.email} helperText={errors.email?.message}
+                        {...register("accountEmail", { required: "Email is required" })}
+                        error={!!errors.accountEmail} helperText={errors.accountEmail?.message}
                     /> 
                 </div>
                 <div className="input-container"> 
-                    <TextField label="Date Of Birth" variant="filled" fullWidth 
+                    <TextField type="date" label="Date Of Birth" variant="filled" fullWidth 
                         {...register("dateOfBirth", { required: "Date Of Birth is required" })}
-                        error={!!errors.dateOfBirth} helperText={errors.dateOfBirth?.message}
+                        error={!!errors.dateOfBirth} helperText={errors.dateOfBirth?.message} InputLabelProps={{ shrink: true }}
                     /> 
                 </div>
                 <div className="input-container"> 

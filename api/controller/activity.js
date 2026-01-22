@@ -41,4 +41,17 @@ const activityList = async (req, res) => {
         }
 };
 
-export { createActivity, updateActivity, activityList };
+
+const deleteActivity = async (req, res) => {
+    try {
+        const selectedIds = req.body; // Expecting an array of IDs to delete
+        const deletedActivity = await Activity.deleteMany({ _id: { $in: selectedIds } });
+        res.status(200).json({ status: 200, message: "Activities deleted successfully", data: deletedActivity });
+    } catch (error) {
+        res.status(500).json({ status: 500, message: "Error deleting activities", error: error.message });
+    }
+}   
+
+
+
+export { createActivity, updateActivity, activityList, deleteActivity };

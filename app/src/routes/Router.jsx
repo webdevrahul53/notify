@@ -2,6 +2,7 @@ import { Suspense, lazy } from "react";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import ProtectedRoute from "../guards/protected-routes";
 import Loader from "../components/loader";
+import AddEditEvent from "../pages/Events/form";
 
 // Lazy loaded components
 const Layout = lazy(() => import("../components/Layout")); // MiniDrawer
@@ -22,14 +23,14 @@ const router = createBrowserRouter([
       // { path: "birthday", element: <Birthday />, },
       { path: "events", children: [
         { index: true, element: <Events />, },
-        { path: "form", element: <Events />, },
+        { path: "form", element: <AddEditEvent />, },
 
       ]},
 
 
       { path: "activity", element: <Activity />, },
       { path: "users", element: <Users />, },
-      // { path: "accounts", element: <Accounts />, },
+      { path: "accounts", element: <Accounts />, },
 
 
     ],

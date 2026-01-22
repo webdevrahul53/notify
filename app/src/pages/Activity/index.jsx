@@ -7,12 +7,13 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { DataGrid } from '@mui/x-data-grid';
 import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer } from '@mui/material';
 import { Link } from "react-router-dom";
-import { AccountTree } from "@mui/icons-material";
+import { AccountTree, PlaylistAdd } from "@mui/icons-material";
 import { DataGridStyle } from "../../utilities/datagridStyle";
 import { useDispatch } from "react-redux";
 import { showSnackbar } from "../../redux/slices/snackbar";
 import Loader from "../../components/loader";
 import axiosInstance from '../../utilities/axiosInstance';
+import moment from "moment";
 
 // import AddEditActivity from "./add-edit-activity";
 const AddEditActivity = React.lazy(() => import("./add-edit-activity"));
@@ -28,8 +29,8 @@ const TableHeaderFormat = (props) => {
     },
     { field: 'activityName', headerName: 'Activity Name', width: 150 },
     { field: 'status', headerName: 'Status', width: 150 },
-    { field: 'createdOn', headerName: 'Created On', width: 150 },
-    { field: 'updatedOn', headerName: 'Updated On', width: 150 },
+    { field: 'createdAt', headerName: 'Created At', width: 180, renderCell: (params) => moment(params.value, 'DD-MM-YYYY hh:mm').format('DD-MM-YYYY hh:mm A')},
+    { field: 'updatedAt', headerName: 'Updated At', width: 180, renderCell: params => moment(params.value, 'DD-MM-YYYY hh:mm').format('DD-MM-YYYY hh:mm A') },
   ]
 }
 
@@ -60,8 +61,8 @@ export default function Activity() {
 
   const getActivityList = async () => {
     try {
-      const result = await axiosInstance.get(`/prcss/fetch`).then(res => res.data)
-      if(result.statuscode == 202) {
+      const result = await axiosInstance.get(`/activity`).then(res => res.data)
+      if(result.status == 200) {
         setActivityList(result.data)
         // dispatch(showSnackbar({ message: result.message, severity: 'info', duration: 2000}));
       }
@@ -72,15 +73,16 @@ export default function Activity() {
 
   const deleteActivity = async () => {
     try {
-      const result = await axiosInstance.put(`/prcss/removeall`, selectedRows).then(res => res.data)
+      const result = await axiosInstance.put(`/activity/delete`, selectedRows).then(res => res.data)
       console.log(result)
-      if(result.statuscode == 201) {
+      if(result.status == 200) {
         getActivityList();
         dispatch(showSnackbar({ message: result.message, severity: 'warning', duration: 2000}));
       }else{
         dispatch(showSnackbar({ message: result.message, severity: 'error', duration: 2000}));
       }
     } catch (error) {
+      console.log(error)
       dispatch(showSnackbar({ message: error.message, severity: 'error', duration: 2000}));
     }
   }
@@ -107,7 +109,7 @@ export default function Activity() {
         </Breadcrumbs>
 
         <Typography className="title" color="primary">
-            <AccountTree color="primary" style={{ fontSize: "3rem", margin: "-10px 0" }} /> Activity
+            <PlaylistAdd color="primary" style={{ fontSize: "3rem", margin: "-10px 0" }} /> Activity
         </Typography>
 
         <div className="button-container">

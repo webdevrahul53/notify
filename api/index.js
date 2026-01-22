@@ -7,7 +7,7 @@ import usersRouter from './router/users.js';
 import tasksRouter from './router/tasks.js';
 import connectDB from './config/db.js';
 import activityRouter from './router/activity.js';
-import accountRouter from './router/accounts.js';
+import accountRouter from './router/account.js';
 dotenv.config();
 
 
@@ -40,7 +40,7 @@ app.use(cors({
     origin: origins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Accept', 'X-Requested-With', 'Authorization'],
-    // credentials: true,
+    credentials: true,
     optionsSuccessStatus: 200
 }));
 app.use(bodyParser.json({ limit: '10000mb' }));

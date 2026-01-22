@@ -29,11 +29,19 @@ const loginUser = async (req, res) => {
         if(isMatch) {
             const accessToken = generateAccessToken(response);
             const refreshToken = generateRefreshToken(response);
+            
+            res.cookie("refreshToken", refreshToken, {
+                httpOnly: true,
+                secure: process.env.APP_ENV === "production",
+                sameSite: process.env.APP_ENV === "production" ? "none" : "lax",
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+                path: "/api/users/refresh-token",
+            });
             res.status(200).json({ status: 200, user: {
                 _id: response._id,
                 fullName: response.fullName,
                 email: response.email,   
-            }, accessToken, refreshToken })
+            }, accessToken })
         }
         else res.status(500).json({ status: 500, message: "Incorrect Email or Password" })
     }catch (error) {
@@ -78,19 +86,28 @@ const deleteUser = async (req, res) => {
     }
 }
 
-
 const refreshToken = async (req, res) => {
-    const token = req.body.refreshToken;
-    if(!token) res.status(404).json({ status: 404, message: "Token is required" })
+  try {
+    const token = req.cookies.refreshToken;
+    if (!token) return res.status(401).json({ status: 401, message: "Refresh token is required", });
 
-    const user = jwt.verify(token, process.env.JWT_REFRESH_SECRET)
-    if(!user) res.status(403).json({ status: 403, message: "Refresh token expired" })
-
+    const user = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
     const accessToken = generateAccessToken(user)
-    return res.status(200).json({ status: 200, accessToken })
+    return res.status(200).json({ status: 200, accessToken, });
 
-}
+  } catch (error) {
+    if (error.name === "TokenExpiredError")
+    return res.status(403).json({ status: 403, message: "Refresh token expired", });
+
+    return res.status(403).json({ status: 403, message: "Invalid refresh token", });
+  }
+};
 
 
+const logoutUser = (req, res) => {
+  res.clearCookie("refreshToken", { path: "/api/users/refresh-token", });
+  return res.status(200).json({ status: 200, message: "Logged out" });
+};
 
-export { usersList, loginUser, registerUser, deleteUser, getUserById, refreshToken };
+
+export { usersList, loginUser, registerUser, deleteUser, getUserById, refreshToken, logoutUser  };
