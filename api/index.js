@@ -6,6 +6,7 @@ import bodyParser from 'body-parser';
 import usersRouter from './router/users.js';
 import tasksRouter from './router/tasks.js';
 import connectDB from './config/db.js';
+import activityRouter from './router/activity.js';
 dotenv.config();
 
 
@@ -46,6 +47,7 @@ app.use(bodyParser.urlencoded({ limit: '10000mb', extended: true }));
 app.use(express.static('uploads'));
 
 app.use("/api/users", usersRouter)
+app.use("/api/activity", activityRouter)
 app.use("/api/tasks", tasksRouter)
 
 
