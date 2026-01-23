@@ -13,6 +13,7 @@ import { useDispatch } from "react-redux";
 import { showSnackbar } from "../../redux/slices/snackbar";
 import Loader from "../../components/loader";
 import axiosInstance from '../../utilities/axiosInstance';
+import { ConvertToDateTime } from "../../utilities/convertDate";
 
 // import AddEditUsers from "./add-edit-user";
 const AddEditUsers = React.lazy(() => import("./add-edit-users"));
@@ -29,8 +30,9 @@ const TableHeaderFormat = (props) => {
     { field: 'fullName', headerName: 'Full Name', width: 150 },
     { field: 'email', headerName: 'Email', width: 240 },
     { field: 'status', headerName: 'Status', width: 150 },
-    { field: 'createdOn', headerName: 'Created On', width: 150 },
-    { field: 'updatedOn', headerName: 'Updated On', width: 150 },
+
+    { field: 'createdAt', headerName: 'Created At', width: 180, renderCell: (params) => ConvertToDateTime(params.value)},
+    { field: 'updatedAt', headerName: 'Updated At', width: 180, renderCell: params => ConvertToDateTime(params.value)},
   ]
 }
 

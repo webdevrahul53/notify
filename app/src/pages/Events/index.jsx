@@ -4,13 +4,12 @@ import AddIcon from '@mui/icons-material/Add';
 import EditSquareIcon from '@mui/icons-material/EditSquare';
 
 import { DataGrid } from '@mui/x-data-grid';
-import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, LinearProgress, Menu, MenuItem } from '@mui/material';
+import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, LinearProgress, Menu, MenuItem, Chip } from '@mui/material';
 import { Link, useNavigate } from "react-router-dom";
-import { Assignment, CorporateFare } from "@mui/icons-material";
+import { CorporateFare } from "@mui/icons-material";
 import { DataGridStyle } from "../../utilities/datagridStyle";
-// import { useDispatch } from "react-redux";
-import moment from "moment";
 import axiosInstance from "../../utilities/axiosInstance";
+import { ConvertToDate, ConvertToDateTime } from "../../utilities/convertDate";
 
 const TableHeaderFormat = (props) => {
  
@@ -21,15 +20,25 @@ const TableHeaderFormat = (props) => {
         return params.api.getRowIndexRelativeToVisibleRows(params.id) + 1 + (props.currentPage * props.pageSize);
       },  
     },
-    { field: 'scheduledOn', headerName: 'Scheduled On', width: 120 },
-    { field: 'accountId', headerName: 'Account', width: 120 },
-    { field: 'activityId', headerName: 'Activity', width: 120 },
-    { field: 'subject', headerName: 'Subject', width: 80 },
+    { field: 'scheduleDate', headerName: 'Schedule Date', width: 120, renderCell: (params) => ConvertToDate(params.value) },
+    // { field: 'accountName', headerName: 'Account', width: 120 },
+    { field: 'activityName', headerName: 'Activity', width: 120 },
+    { field: 'subject', headerName: 'Subject', width: 180 },
     { field: 'title', headerName: 'Title', width: 100 },
-    { field: 'content', headerName: 'Content', width: 80 },
-    { field: 'status', headerName: 'Status', width: 80 },
-    { field: 'createdAtITC', headerName: 'Created At', width: 180, renderCell: (params) => moment(params.value, 'DD-MM-YYYY hh:mm').format('DD-MM-YYYY hh:mm A')},
-    { field: 'updatedAtITC', headerName: 'Updated At', width: 180, renderCell: params => moment(params.value, 'DD-MM-YYYY hh:mm').format('DD-MM-YYYY hh:mm A') },
+    { field: 'contentImage', headerName: 'Content', width: 80, renderCell: (params) => {
+      
+      return <img src={`${axiosInstance.defaults.baseURL}/event/image/${params.value}`} width={40} height={40} style={{borderRadius: "5px", margin: "5px"}} />
+    } },
+    {
+      field: "status", headerName: "Status", width: 100,
+      renderCell: ({ value }) => {
+        const color = value ? "success" : "warning";
+        return <Chip size="small" label={value ? "Active" : "Inactive"} color={color} />;
+      },
+    },
+    
+    { field: 'createdAt', headerName: 'Created At', width: 180, renderCell: (params) => ConvertToDateTime(params.value)},
+    { field: 'updatedAt', headerName: 'Updated At', width: 180, renderCell: params => ConvertToDateTime(params.value)},
   ]
 }
 
@@ -44,8 +53,7 @@ export default function Events() {
   const [loading, setLoading] = React.useState(false)
   const [rowSelectionModel, setRowSelectionModel] = React.useState({ type: "include", ids: new Set() });
   const [selectedRows, setSelectedRows] = React.useState([])
-  const [selectedQC, setSelectedQC] = React.useState(null)
-  const [versionList, setVersionList] = React.useState([])
+  const [selectedEvent, setSelectedEvent] = React.useState(null)
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
 
@@ -70,12 +78,9 @@ export default function Events() {
     if(selectedRows.length === 1){
       const selected = eventsList.find(item => item._id === selectedRows[0])
       console.log(selected)
-      setSelectedQC(selected)
-      const versionList = Array.from({ length: selected?.version + 1}, (_, i) => i);
-      setVersionList(versionList)
+      setSelectedEvent(selected)
     }else {
-      setSelectedQC(null)
-      setVersionList([])
+      setSelectedEvent(null)
     }
   }, [selectedRows])
 
@@ -83,7 +88,7 @@ export default function Events() {
   const getEventsList = async () => {
     try {
       setLoading(true);
-      const result = await axiosInstance.get(`/qc/fetch`).then(res => res.data)
+      const result = await axiosInstance.get(`/event`).then(res => res.data)
       setEventsList(result.data)
       setLoading(false);
       if(result.statuscode == 200) {
@@ -95,11 +100,6 @@ export default function Events() {
     }
   }
 
-
-  const handleEdit = (version = null) => {
-    let url = `/inspection-entry-form?_id=${selectedQC?._id}&servicePo=${selectedQC?.servicePo}&qcMaterial=${selectedQC?.qcMaterial}&materialPo=${selectedQC?.materialPo}&qcProcess=${selectedQC?.qcProcess}&qcPhase=${selectedQC?.qcPhase}&qcRoute=${selectedQC?.qcRoute}&sample=${selectedQC?.sample}&version=${version != null ? version : selectedQC?.version}&currentVersion=${selectedQC?.version}`
-    navigate(url)
-  }
 
   return (
     <section className="inspection-entry-form">
@@ -118,15 +118,9 @@ export default function Events() {
             <Button variant="outlined" size="large" className="button-css" component={Link} to={"form"}>
                 Add New <AddIcon style={{ margin: "-1px 0 0 2px", fontSize: 17, fontWeight: 600 }} />
             </Button>
-            <IconButton disabled={selectedRows.length !== 1} onClick={() => handleEdit()}> 
+            <IconButton disabled={selectedRows.length !== 1} onClick={() => navigate(`form?_id=${selectedEvent?._id}`)}> 
               <EditSquareIcon color={selectedRows.length == 1 ? "info" : "disabled"} /> 
             </IconButton>
-            <IconButton disabled={selectedRows.length !== 1} onClick={handleClick}> 
-              <Assignment color={selectedRows.length == 1 ? "info" : "disabled"} /> 
-            </IconButton>
-            <Menu id="basic-menu" anchorEl={anchorEl} open={open} onClose={handleClose} >
-              {versionList?.map(e => <MenuItem onClick={() => handleEdit(e)}>Version {+e + 1} </MenuItem>)}
-            </Menu>
             {/* <IconButton> <DeleteIcon color="error" /> </IconButton> */}
         </div>
         

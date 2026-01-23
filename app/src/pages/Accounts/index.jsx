@@ -13,7 +13,7 @@ import { useDispatch } from "react-redux";
 import { showSnackbar } from "../../redux/slices/snackbar";
 import Loader from "../../components/loader";
 import axiosInstance from '../../utilities/axiosInstance';
-import moment from "moment";
+import { ConvertToDate, ConvertToDateTime } from "../../utilities/convertDate";
 
 // import AddEditAccounts from "./add-edit-account";
 const AddEditAccounts = React.lazy(() => import("./add-edit-account"));
@@ -22,16 +22,16 @@ const TableHeaderFormat = (props) => {
  
   return [
     { 
-      field: 'id', headerName: 'ID', width: 80,
+      field: 'id', headerName: 'ID', width: 50,
       renderCell: (params) => {
         return params.api.getRowIndexRelativeToVisibleRows(params.id) + 1 + (props.currentPage * props.pageSize);
       },  
     },
     { field: 'accountName', headerName: 'Account Name', width: 150 },
     { field: 'accountEmail', headerName: 'Email', width: 200 },
-    { field: 'dateOfBirth', headerName: 'Date Of Birth', width: 180, renderCell: (params) => moment(params.value, 'DD-MM-YYYY hh:mm').format('DD-MM-YYYY hh:mm A')},
+    { field: 'dateOfBirth', headerName: 'Date Of Birth', width: 120, renderCell: (params) => ConvertToDate(params.value)},
 
-    { field: 'phoneNumber', headerName: 'Phone Number', width: 150 },
+    { field: 'phoneNumber', headerName: 'Phone Number', width: 120 },
     // { field: 'location', headerName: 'Location', width: 150 },
     // { field: 'employeeCode', headerName: 'Employee Code', width: 150 },
     // { field: 'anniversaryDate', headerName: 'Anniversary Date', width: 150 },
@@ -44,8 +44,8 @@ const TableHeaderFormat = (props) => {
       },
     },
 
-    { field: 'createdAt', headerName: 'Created At', width: 180, renderCell: (params) => moment(params.value, 'DD-MM-YYYY hh:mm').format('DD-MM-YYYY hh:mm A')},
-    { field: 'updatedAt', headerName: 'Updated At', width: 180, renderCell: params => moment(params.value, 'DD-MM-YYYY hh:mm').format('DD-MM-YYYY hh:mm A') },
+    { field: 'createdAt', headerName: 'Created At', width: 180, renderCell: (params) => ConvertToDateTime(params.value)},
+    { field: 'updatedAt', headerName: 'Updated At', width: 180, renderCell: params => ConvertToDateTime(params.value)},
   ]
 }
 

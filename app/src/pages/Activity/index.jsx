@@ -5,7 +5,7 @@ import EditSquareIcon from '@mui/icons-material/EditSquare';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import { DataGrid } from '@mui/x-data-grid';
-import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer } from '@mui/material';
+import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, Chip } from '@mui/material';
 import { Link } from "react-router-dom";
 import { AccountTree, PlaylistAdd } from "@mui/icons-material";
 import { DataGridStyle } from "../../utilities/datagridStyle";
@@ -13,7 +13,7 @@ import { useDispatch } from "react-redux";
 import { showSnackbar } from "../../redux/slices/snackbar";
 import Loader from "../../components/loader";
 import axiosInstance from '../../utilities/axiosInstance';
-import moment from "moment";
+import { ConvertToDateTime } from "../../utilities/convertDate";
 
 // import AddEditActivity from "./add-edit-activity";
 const AddEditActivity = React.lazy(() => import("./add-edit-activity"));
@@ -28,9 +28,15 @@ const TableHeaderFormat = (props) => {
       },  
     },
     { field: 'activityName', headerName: 'Activity Name', width: 150 },
-    { field: 'status', headerName: 'Status', width: 150 },
-    { field: 'createdAt', headerName: 'Created At', width: 180, renderCell: (params) => moment(params.value, 'DD-MM-YYYY hh:mm').format('DD-MM-YYYY hh:mm A')},
-    { field: 'updatedAt', headerName: 'Updated At', width: 180, renderCell: params => moment(params.value, 'DD-MM-YYYY hh:mm').format('DD-MM-YYYY hh:mm A') },
+    {
+      field: "status", headerName: "Status", width: 100,
+      renderCell: ({ value }) => {
+        const color = value ? "success" : "warning";
+        return <Chip size="small" label={value ? "Active" : "Inactive"} color={color} />;
+      },
+    },
+    { field: 'createdAt', headerName: 'Created At', width: 180, renderCell: (params) => ConvertToDateTime(params.value)},
+    { field: 'updatedAt', headerName: 'Updated At', width: 180, renderCell: params => ConvertToDateTime(params.value)},
   ]
 }
 
