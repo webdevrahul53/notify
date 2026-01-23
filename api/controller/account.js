@@ -39,7 +39,11 @@ const updateAccount = async (req, res) => {
 
 const accountList = async (req, res) => {
     try {
-        const accounts = await Account.find()
+        const { status } = req.query
+        let query = {}
+        if(status) query.status = status;
+
+        const accounts = await Account.find(query)
             .select(
                 "accountName accountEmail phoneNumber employeeCode location dateOfBirth anniversaryDate status createdAt updatedAt"
             )

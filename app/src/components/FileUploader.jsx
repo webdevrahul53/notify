@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import axiosInstance from "../utilities/axiosInstance";
 
 export default function SingleImageUploader({ file, setFile }) {
   const inputRef = useRef(null);
@@ -6,6 +7,7 @@ export default function SingleImageUploader({ file, setFile }) {
 
   const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
 
+  console.log(file)
   /* ============================
      HANDLE FILE SELECT
   ============================ */
@@ -35,9 +37,9 @@ export default function SingleImageUploader({ file, setFile }) {
       setPreview(null);
       return;
     }
-
+    console.log(file)
     if (file.isExisting) {
-      setPreview(`/api/files/${file.id}`);
+      setPreview(`${axiosInstance.defaults.baseURL}/event/image/${file._id}`);
       return;
     }
 

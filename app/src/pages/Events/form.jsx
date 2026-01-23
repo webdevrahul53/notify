@@ -2,8 +2,8 @@ import "../../styles/InspectionEntryForm.css";
 
 import React, { useState } from 'react';
 import { ArrowBack } from "@mui/icons-material";
-import { Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
-import { Controller, useForm } from "react-hook-form";
+import { Button, Checkbox, FormControl, FormHelperText, InputLabel, ListItemText, MenuItem, Select, TextField, Typography } from "@mui/material";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { showSnackbar } from "../../redux/slices/snackbar";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -12,26 +12,26 @@ import axiosInstance from "../../utilities/axiosInstance";
 // import POGPForm from "../../components/pogpform";
 
 const DEFAULTVALUES = {
-    scheduledOn: "",
+    scheduleDate: "",
     activityId: "",
     accountId: "",
     subject: "",
     title: "",
-    content: "",
+    contentImage: "",
 }
 
 
 export default function AddEditEvent() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const user = useSelector(state => state.auth.user);
     const [activityList, setActivityList] = useState([]);
     const [accountList, setAccountList] = useState([]);
     const [image, setImage] = useState(null);
-    const { register, control, handleSubmit, reset, setValue, watch, formState: {errors} } = useForm({
+    const { control, handleSubmit, reset, formState: {errors} } = useForm({
         defaultValues: DEFAULTVALUES
     });
 
+    const contentImage = useWatch({ control, name: "contentImage" })
 
     const [searchParams] = useSearchParams();
     const _id = searchParams.get("_id");
@@ -48,13 +48,13 @@ export default function AddEditEvent() {
         try {
             const results = await Promise.allSettled([
                 axiosInstance.get(`/activity`).then(res => res.data),
-                axiosInstance.get(`/accounts`).then(res => res.data),
+                axiosInstance.get(`/account?status=true`).then(res => res.data),
             ]);
         
             const [activityRes, accountsRes] = results;
-            console.log(activityRes)
+            console.log(activityRes, accountsRes)
 
-            setAccountList(activityRes.status === "fulfilled" ? activityRes.value.data : []);
+            setActivityList(activityRes.status === "fulfilled" ? activityRes.value.data : []);
             setAccountList(accountsRes.status === "fulfilled" ? accountsRes.value.data : []);
             
         
@@ -66,22 +66,12 @@ export default function AddEditEvent() {
 
     const getEventById = async (id) => {
         try {
-            const result = await axiosInstance.get(`/event/${id}`);
-            console.log(result)
+            const result = await axiosInstance.get(`/event/${id}`).then(res => res.data);
+            // console.log(result.data)
             if (result.status === 200) {
-                // const deedData = result.data.data;
-                // console.log(deedData)
-                // setFiles(
-                //     deedData?.deedDocs?.map((f) => ({
-                //         id: f.filId,
-                //         name: f.filName,
-                //         size: Number(f.filContentSize),
-                //         type: f.filContentType,
-                //         isExisting: true,
-                //     }))
-                // );
-                // if(deedData.approvalStatus === "Rejected") setApprovalRemarks(deedData.approvalDetails[deedData.approvalDetails.length - 1]);
-                // reset(deedData)
+                const scheduleDate = result.data.scheduleDate.split("T")[0];
+                reset({...result.data, scheduleDate})
+                setImage({...result.data.contentImage, isExisting: true})
             } else {
                 console.error("Error fetching Deed by ID:", result.message);
             }
@@ -92,7 +82,28 @@ export default function AddEditEvent() {
 
     
     const onSubmit = async (data) => {
-        console.log(data)
+        if(image?.file) data.contentImage = image?.file;
+        else delete data.contentImage
+        console.log(image)
+        const formData = new FormData();
+        for (const key in data) formData.append(key, data[key]);
+
+        try {
+            const url = _id ? `/event/${_id}` : "/event"
+            const response = await axiosInstance[_id ? "put":"post"](url, formData).then(res => res.data)
+            console.log(response)
+            if (response.status === 200) {
+                navigate('/events');
+                dispatch(showSnackbar({ message: response.message, severity: 'success', duration: 2000 }));
+            }
+            else {
+                console.error("Error creating Deed record:", response.message);
+            }
+
+        }catch (error) {
+            dispatch(showSnackbar({ message: error.message, severity: 'error', duration: 2000 }));
+
+        }
     };
     
   
@@ -120,20 +131,21 @@ export default function AddEditEvent() {
     
             </div>
 
+            {/* {JSON.stringify(control._formValues)} */}
 
             <div style={{display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "20px"}}>
 
-                <Controller name="scheduledOn" control={control} defaultValue={control._formValues.scheduledOn ?? ""} 
-                    rules={{ required: "Scheduled On is required" }}
+                <Controller name="scheduleDate" control={control} defaultValue={control._formValues.scheduleDate ?? ""} 
+                    rules={{ required: "Schedule Date is required" }}
                     render={({ field, fieldState }) => (
-                        <TextField type="date" {...field} value={field.value ?? ""} label="Scheduled On" 
-                        variant="filled" fullWidth error={!!errors.scheduledOn} InputLabelProps={{ shrink: true }} />
+                        <TextField type="date" {...field} value={field.value ?? ""} label="Schedule Date" 
+                        variant="filled" fullWidth error={!!errors.scheduleDate} InputLabelProps={{ shrink: true }} />
                     )}
                 />
 
                 <Controller name="activityId" control={control} rules={{ required: "Activity is required" }}
                     render={({ field }) => (
-                    <FormControl variant="filled" fullWidth error={!!errors?.activityId} disabled={_id}>
+                    <FormControl variant="filled" fullWidth error={!!errors?.activityId}>
                         <InputLabel id="activity-select-label">Activity</InputLabel>
                         <Select labelId="activity-select-label" id="activity-select" {...field}>
                             <MenuItem value=""> <em>None</em> </MenuItem>
@@ -147,22 +159,58 @@ export default function AddEditEvent() {
                     )}
                 />
 
-                
-                <Controller name="accountId" control={control} rules={{ required: "Accounts is required" }}
-                    render={({ field }) => (
-                    <FormControl variant="filled" fullWidth error={!!errors?.accountId} disabled={_id}>
-                        <InputLabel id="activity-select-label">Accounts</InputLabel>
-                        <Select labelId="activity-select-label" id="activity-select" {...field}>
-                            <MenuItem value=""> <em>None</em> </MenuItem>
+
+                <Controller name="accountId" control={control} rules={{ required: "Accounts are required" }}
+                    render={({ field }) => {
+                        const allIds = accountList.map(acc => acc._id);
+                        const isAllSelected = field.value?.length === allIds.length;
+
+                        const handleChange = (event) => {
+                            const value = event.target.value;
+
+                            // Detect Select All click
+                            if (value.includes("all")) field.onChange(isAllSelected ? [] : allIds);
+                            else field.onChange(value);
+                        };
+
+                        return (
+                        <FormControl fullWidth variant="filled" error={!!errors?.accountId}>
+                            <InputLabel>Accounts</InputLabel>
+
+                            <Select multiple value={field.value || []} onChange={handleChange}
+                            renderValue={(selected) =>
+                                accountList
+                                .filter(acc => selected.includes(acc._id))
+                                .map(acc => acc.accountName)
+                                .join(", ")
+                            }
+                            >
+                            {/* Select All */}
+                            <MenuItem value="all">
+                                <Checkbox checked={isAllSelected} />
+                                <ListItemText primary="Select All" />
+                            </MenuItem>
+
                             {accountList.map((account) => (
                                 <MenuItem key={account._id} value={account._id}>
-                                    {account.accountName}
+                                    <Checkbox checked={field.value?.includes(account._id)} />
+                                    <ListItemText primary={account.accountName} />
                                 </MenuItem>
                             ))}
-                        </Select>
-                    </FormControl>
-                    )}
+                            </Select>
+
+                            {errors?.accountId && (
+                            <FormHelperText>
+                                {errors.accountId.message}
+                            </FormHelperText>
+                            )}
+                        </FormControl>
+                        );
+                    }}
                 />
+
+
+
 
             </div>
 
@@ -190,7 +238,6 @@ export default function AddEditEvent() {
             </div>
 
             <FileUploader file={image} setFile={setImage}></FileUploader>
-
 
         </form>
 
