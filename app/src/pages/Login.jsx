@@ -48,7 +48,7 @@ const Login = () => {
       <div></div>
       <div className="image-container">
         {/* <img src="https://thumbs.dreamstime.com/b/multi-factor-authentication-illustration-mfa-vector-editable-297401593.jpg" width={"100%"} alt=""/> */}
-        {/* <img src="/logo3.png" width={"100%"} alt="" /> */}
+        <img src="/logo.png" width={"100%"} alt="" />
         <img src="/login.gif" width={"100%"} alt="" />
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="login-form">
