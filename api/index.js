@@ -8,6 +8,7 @@ import connectDB from './config/db.js';
 import activityRouter from './router/activity.js';
 import accountRouter from './router/account.js';
 import eventRouter from './router/event.js';
+import { setupJobs } from './utilities/jobscheduler/jobScheduler.js';
 dotenv.config();
 
 await connectDB();
@@ -53,6 +54,15 @@ app.use("/api/activity", activityRouter)
 app.use("/api/account", accountRouter)
 app.use("/api/event", eventRouter)
 
+
+// Agenda Scheduler setup
+await setupJobs(); // start agenda AFTER job is defined
+      
+process.on("SIGINT", async () => {
+    console.log("System Gracefully shutting down...");
+    await agenda.stop();
+    process.exit(0);
+});
 
 
 // No host param → cluster shares the TCP handle
