@@ -21,6 +21,18 @@ const createAccount = async (req, res) => {
     }
 };
 
+const bulkCreateAccount = async (req, res) => {
+    try {
+        const { data } = req.body;
+        const result = await Account.insertMany(data);
+        console.log(result)
+        res.status(200).json({ status: 200, message: "Account created successfully", data: result });
+    } catch (error) {
+        res.status(500).json({ status: 500, message: "Error creating account", error: error.message });
+    }
+};
+
+
 const updateAccount = async (req, res) => {
     try {
         const { id } = req.params;
@@ -59,7 +71,7 @@ const accountList = async (req, res) => {
 const deleteAccount = async (req, res) => {
     try {
         const selectedIds = req.body; // Expecting an array of IDs to delete
-        const deletedAccount = await Account.updateMany({ _id: { $in: selectedIds } }, { status: false });
+        const deletedAccount = await Account.deleteMany({ _id: { $in: selectedIds } });
         res.status(200).json({ status: 200, message: "Accounts deleted successfully", data: deletedAccount });
     } catch (error) {
         res.status(500).json({ status: 500, message: "Error deleting activities", error: error.message });
@@ -68,4 +80,4 @@ const deleteAccount = async (req, res) => {
 
 
 
-export { createAccount, updateAccount, accountList, deleteAccount };
+export { createAccount, bulkCreateAccount, updateAccount, accountList, deleteAccount };

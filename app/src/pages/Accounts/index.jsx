@@ -7,13 +7,14 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { DataGrid } from '@mui/x-data-grid';
 import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, Chip } from '@mui/material';
 import { Link } from "react-router-dom";
-import { AccountTree } from "@mui/icons-material";
+import { AccountTree, CloudUpload } from "@mui/icons-material";
 import { DataGridStyle } from "../../utilities/datagridStyle";
 import { useDispatch } from "react-redux";
 import { showSnackbar } from "../../redux/slices/snackbar";
 import Loader from "../../components/loader";
 import axiosInstance from '../../utilities/axiosInstance';
 import { ConvertToDate, ConvertToDateTime } from "../../utilities/convertDate";
+const BulkLinkDialog = React.lazy(() => import("./bulkLink"));
 
 // import AddEditAccounts from "./add-edit-account";
 const AddEditAccounts = React.lazy(() => import("./add-edit-account"));
@@ -53,6 +54,7 @@ const TableHeaderFormat = (props) => {
 export default function Accounts() {
   const dispatch = useDispatch();
   const [open, setOpen] = React.useState(false)
+  const [openDialog, setOpenDialog] = React.useState(false)
   const [accountList , setAccountsList] = React.useState([])
   const [currentPage, setCurrentPage] = React.useState(0)
   const [pageSize, setPageSize] = React.useState(1)
@@ -108,8 +110,17 @@ export default function Accounts() {
     getAccountsList();
   }
 
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    getAccountsList();
+  }
+
   return (
     <section className="inspection-entry-form">
+        
+        <React.Suspense fallback={<Loader />}>
+          <BulkLinkDialog open={openDialog} handleClose={handleCloseDialog} />
+        </React.Suspense>
         
         <Drawer anchor={"right"} open={open} onClose={() => handleClose()} PaperProps={{ style: { width: 600 } }}> 
           <Suspense fallback={<Loader />}>
@@ -133,6 +144,9 @@ export default function Accounts() {
                 setOpen(true)
             }}>
                 Add New <AddIcon style={{ margin: "-1px 0 0 2px", fontSize: 17, fontWeight: 600 }} />
+            </Button>
+            <Button variant="contained" size="large" className="button-css" onClick={() => setOpenDialog(true)}>
+                Bulk Upload <CloudUpload style={{ margin: "-2px 0 0 8px", fontSize: 17, fontWeight: 600 }} />
             </Button>
             <IconButton onClick={() => setOpen(true)}> <EditSquareIcon color={selectedRows.length === 1 ? "info" : "disabled"} /> </IconButton>
             <IconButton onClick={() => deleteAccounts()}> <DeleteIcon color={!!selectedRows.length ? "error" : "disabled"} /> </IconButton>
