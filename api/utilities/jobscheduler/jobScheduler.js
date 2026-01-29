@@ -1,171 +1,127 @@
-import { initAgenda } from "../../configs/agendaConfig.js";
+import { initAgenda } from "../../config/agendaConfig.js";
 import Account from "../../model/account.js";
 import Event from "../../model/event.js";
-// import { getAllPolicyDetails } from "../../controllers/insurancemodules/polcyopController.js";
-// import { definePolicyExpiryReminderJob } from "./jobs/policyExpiryReminderJob.js";
-// import { definePolicyInstallmentReminderJob } from "./jobs/policyInstallmentReminderJob.js";
+import { defineEventMailJob } from "./jobs/eventMailNotifJob.js";
 import moment from "moment";
 
 const DEFAULT_REFRESH_MS = process.env.REMINDER_REFRESH_INTERVAL_MS
   ? parseInt(process.env.REMINDER_REFRESH_INTERVAL_MS, 10)
   : 60 * 1000; // 10 seconds
 
-// export const getPolicyExipryMailDetails = async () => {
-//   try {
-//     const polcyopRecords = await getAllPolicyDetails();
+const SCHEDULE_HOUR = process.env.REMINDER_SCHEDULE_HOUR
+  ? parseInt(process.env.REMINDER_SCHEDULE_HOUR, 10)
+  : 9; // 9 AM
 
-//     const expiryRecipientDtls = polcyopRecords
-//       ?.map((elm) => {
-//         if (elm.expiryDate && elm.createdby?.acc_eml)
-//           return {
-//             policyNo: elm.policyNo || "",
-//             recp_dtl: {
-//               username: elm.createdby?.acc_uname || "",
-//               name: elm.createdby?.acc_fname || "",
-//               email: elm.createdby?.acc_eml || "",
-//             },
-//             expiryDate: elm.expiryDate || "",
-//           };
-//       })
-//       ?.filter((elm) => elm);
+const SCHEDULE_MINUTE = process.env.REMINDER_SCHEDULE_MINUTE
+  ? parseInt(process.env.REMINDER_SCHEDULE_MINUTE, 10)
+  : 0; // 00 Minutes
 
-//     return expiryRecipientDtls;
-//     // res.status(200).json({ data: expiryRecipientDtls })
-//   } catch (error) {
-//     console.error("Error retrieving Policy details:", error);
-//     return [];
-//   }
-// };
-export const getDobDetails = async () => {
+
+// define all job details --------------------------------------------------------------------------------
+export const getDobDetails = async (req, res) => {
   try {
-    const today = moment().format("MM-DD-YYYY");
-    const accounts = await Account.find({dateOfBirth: today}).lean();
+    const today = moment().format("DD-MM");
+    // console.log(today);
+    const accounts = await Account.find().lean();
+    const dobAccounts = accounts.filter(acc => {
+      if(!acc.dateOfBirth) return false;
+      const dobMoment = moment(acc.dateOfBirth, "DD-MM-YYYY");
+      return dobMoment.isValid() && dobMoment.format("DD-MM") === today;
+    }).map(acc => ({
+      _id: acc._id,
+      name: acc.accountName,
+      email: acc.accountEmail,
+      dateOfBirth: moment(acc.dateOfBirth, "DD-MM-YYYY").format("DD-MM-YYYY"),
+    }));
+    // res.status(200).json({ data: dobAccounts })
     return accounts;
   } catch (error) {
     console.error(error.message)
   }
 }
-export const getEventDetails = async () => {
+export const getEventDetails = async (req, res) => {
   try {
-    const today = moment().format("MM-DD-YYYY");
+    const today = new Date();
+    // console.log(today);
+    const startOfDay = new Date(today);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
     const pipeline = [
-      ...(moment.isDate(today) ? [{ $match: { scheduleDate: today }}] : []),
+      { $match: { scheduleDate: { $gte: startOfDay, $lt: endOfDay } }},
       { $lookup: { from: "activities", localField: "activityId", foreignField: "_id", as: "activity" } },
       { $unwind: { path: "$activity", preserveNullAndEmptyArrays: true } },
+      { $addFields: {
+        activity: { _id: "$activity._id", activityName: "$activity.activityName", status: "$activity.status" }
+      } },
       { $lookup: { from: "accounts", localField: "accountId", foreignField: "_id", as: "accounts" } },
-      { $unwind: { path: "$accounts", preserveNullAndEmptyArrays: true } },
-      { $addFields: { activityName: "$activity.activityName" } },
+      { $addFields: {
+        accounts: {
+          $map: {
+            input: "$accounts",
+            as: "acc",
+            in: { _id: "$$acc._id", name: "$$acc.accountName", email: "$$acc.accountEmail", status: "$$acc.status" }
+          }
+        }
+      } },
+      { $lookup: { from: "uploads.files", localField: "contentImage", foreignField: "_id", as: "contentImage"  } },
+      { $unwind: { path: "$contentImage", preserveNullAndEmptyArrays: true } },
       { $sort: { createdAt: 1 } },
-      { $project: { _v: 0 } }
+      { $project: {
+        activityId: 0, 
+        "activity.createdAt": 0,
+        "activity.updatedAt": 0,
+        "activity.__v": 0,
+        accountId: 0,
+        __v: 0
+      } }
     ]
     const events = await Event.aggregate(pipeline);
+    // res.status(200).json({ data: events })
     return events;
   } catch (error) {
     console.error(error.message)
   }
 }
 
-// export const getPolicyInstallmentMailDetails = async () => {
-//   try {
-//     const polcyopRecords = await getAllPolicyDetails();
-//     const installmentRecipientDtls = [];
+// scheduling all events ---------------------------------------------------------------------------------
+const scheduleEventRecords = async (agenda, eventRecords) => {
+  if (!eventRecords || !eventRecords.length) return;
+  const now = moment.tz("Asia/Kolkata");
 
-//     polcyopRecords?.forEach((elm) => {
-//       if (elm.installmentDetails?.length && elm.createdby?.acc_eml) {
-//         installmentRecipientDtls.push(elm.installmentDetails?.map((inst) => ({
-//           policyNo: elm.policyNo || "",
-//           premiumType: elm.premiumType || "",
-//           premiumAmount: elm.premiumAmount || "",
-//           gstAmount: elm.gstAmount || "",
-//           netPremiumAmount: elm.netPremiumAmount || "",
-//           installmentFieldName: inst.installmentFieldName,
-//           installmentAmount: inst.installmentAmount,
-//           installmentGst: inst.installmentGst,
-//           installmentDate: inst.installmentDate,
-//           installmentNote: inst.installmentNote,
-//           recp_dtl: {
-//             username: elm.createdby?.acc_uname || "",
-//             name: elm.createdby?.acc_fname || "",
-//             email: elm.createdby?.acc_eml || "",
-//           },
-//         })))
-//       }
-//     })
-//     const installmentRecipientData = installmentRecipientDtls?.flat()
+  for (const event of eventRecords) {
+    if (!event?.scheduleDate) continue;
+    
+    // 🔹 Define scheduled time (customizable)
+    const hour = SCHEDULE_HOUR || 0;   // default 00
+    const minute = SCHEDULE_MINUTE || 0; // default 00
 
-//     return installmentRecipientData;
-//     // res.status(200).json({ data: installmentRecipientData })
-//   } catch (error) {
-//     console.error("Error retrieving Policy details:", error);
-//     return [];
-//   }
-// };
+    // 🔹 Build scheduled datetime
+    const scheduleAt = moment.tz(event.scheduleDate, "Asia/Kolkata").set({ hour, minute, second: 0, millisecond: 0 });
 
+    // const eventDate = moment(event.scheduleDate);
+    if (!scheduleAt.isValid()) continue;
 
-const scheduleExpiryRecords = async (agenda, policyRecords) => {
-  if (!policyRecords || !policyRecords.length) return;
-
-  const now = moment();
-
-  for (const policy of policyRecords) {
-    const expiryDate = moment(policy.expiryDate, "DD-MM-YYYY HH:mm:ss");
-    if (!expiryDate.isValid()) continue;
-
-    const daysBeforeArr = [3, 7, 15, 30, 45].sort((a, b) => (b-a)); // or [7, 3, 1] as needed as descending order
-    for (const daysLeft of daysBeforeArr) {
-      const reminderDt = expiryDate.clone().subtract(daysLeft, "days");
-      if (reminderDt.isAfter(now)) {
-        // Only schedule if reminder date is in the future
-        await agenda.schedule(reminderDt.toDate(), "send policy expiry reminder", {
-          policy,
-          daysLeft,
-        });
-        console.log(`🕓 Scheduled Expiry related mail for ${policy.recp_dtl.email} at ${reminderDt.format("DD-MM-YYYY HH:mm:ss")}`);
-      }
-    }
-  }
-};
-
-const scheduleInstallmentRecords = async (agenda, policyRecords) => {
-  if (!policyRecords || !policyRecords.length) return;
-
-  const now = moment();
-
-  for (const policy of policyRecords) {
-    const installmentDate = moment(policy.installmentDate, "DD-MM-YYYY HH:mm:ss");
-    if (!installmentDate.isValid()) continue;
-
-    const daysBeforeArr = [3, 7, 15, 30].sort((a, b) => (b-a)); // or [7, 1] as needed as descending order
-    for (const daysLeft of daysBeforeArr) {
-      const reminderDt = installmentDate.clone().subtract(daysLeft, "days");
-      if (reminderDt.isAfter(now)) {
-        // Only schedule if reminder date is in the future
-        await agenda.schedule(reminderDt.toDate(), "send policy expiry reminder", {
-          policy,
-          daysLeft,
-        });
-        console.log(`🕓 Scheduled Installment related mail for ${policy.recp_dtl.email} at ${reminderDt.format("DD-MM-YYYY HH:mm:ss")}`);
-      }
+    // 🔹 Schedule only if time is in future
+    if (scheduleAt.isAfter(now)) {
+      await agenda.schedule(scheduleAt.toDate(), "send notification", { eventId: event._id });
+      console.log(`🕓 Scheduled event mail at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
     }
   }
 };
 
 
+// map jobs with scheduler -------------------------------------------------------------------------------
 export const setupJobs = async () => {
   const agenda = await initAgenda();
-  definePolicyExpiryReminderJob(agenda);
-  definePolicyInstallmentReminderJob(agenda);
+  defineEventMailJob(agenda);
 
   try {
-    // expiry notification
-    await agenda.cancel({ name: "send policy expiry reminder" }); // clear existing jobs
-    const policyExpiryRecords = await getPolicyExipryMailDetails();
-    await scheduleExpiryRecords(agenda, policyExpiryRecords);
-
-    // installment notification
-    await agenda.cancel({ name: "send policy installment reminder" }); // clear existing jobs
-    const policyInstallmentRecords = await getPolicyInstallmentMailDetails();
-    await scheduleInstallmentRecords(agenda, policyInstallmentRecords);
+    // event notification
+    await agenda.cancel({ name: "send event notification" }); // clear existing jobs
+    const eventRecords = await getEventDetails();
+    await scheduleEventRecords(agenda, eventRecords);
 
     console.log("✅ Initial Agenda jobs scheduled");
   } catch (err) {
@@ -177,15 +133,10 @@ export const setupJobs = async () => {
     try {
       console.log("🔁 Refreshing scheduled jobs...");
 
-      // expiry notification
-      await agenda.cancel({ name: "send policy expiry reminder" });
-      const policyExpiryRecords = await getPolicyExipryMailDetails();
-      await scheduleExpiryRecords(agenda, policyExpiryRecords);
-
-      // installment notification
-      await agenda.cancel({ name: "send policy installment reminder" });
-      const policyInstallmentRecords = await getPolicyInstallmentMailDetails();
-      await scheduleInstallmentRecords(agenda, policyInstallmentRecords);
+      // event notification
+      await agenda.cancel({ name: "send event notification" });
+      const eventRecords = await getEventDetails();
+      await scheduleEventRecords(agenda, eventRecords);
 
       console.log("✅ Reminder jobs refreshed successfully");
     } catch (err) {

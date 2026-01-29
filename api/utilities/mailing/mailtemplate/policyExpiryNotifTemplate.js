@@ -153,6 +153,6 @@ const EmailTemplate = ({ policy, daysLeft }) => {
     );
 };
 
-export const genPolicyExpiryMailnotif = async (policy, daysLeft) => {
+export const genEventnotif = async (policy, daysLeft) => {
     return await render(React.createElement(EmailTemplate, { policy, daysLeft }));
 };

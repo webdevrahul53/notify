@@ -154,7 +154,6 @@ const getEventImage = (req, res) => {
 
     res.set("Content-Type", "image/jpeg"); // or auto-detect later
     bucket.openDownloadStream(fileId).pipe(res);
-    
   } catch (error) {
     res.status(404).json({ message: "Image not found" });
   }
