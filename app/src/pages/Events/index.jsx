@@ -6,7 +6,7 @@ import EditSquareIcon from '@mui/icons-material/EditSquare';
 import { DataGrid } from '@mui/x-data-grid';
 import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, LinearProgress, Menu, MenuItem, Chip } from '@mui/material';
 import { Link, useNavigate } from "react-router-dom";
-import { CorporateFare } from "@mui/icons-material";
+import { CorporateFare, Today } from "@mui/icons-material";
 import { DataGridStyle } from "../../utilities/datagridStyle";
 import axiosInstance from "../../utilities/axiosInstance";
 import { ConvertToDate, ConvertToDateTime } from "../../utilities/convertDate";
@@ -110,7 +110,7 @@ export default function Events() {
         </Breadcrumbs>
 
         <Typography className="title" color="primary">
-            <CorporateFare color="primary" style={{ fontSize: "3rem", margin: "-10px 0" }} /> Events
+            <Today color="primary" style={{ fontSize: "3rem", margin: "-10px 0" }} /> Events
         </Typography>
         
 
