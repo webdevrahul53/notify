@@ -1,5 +1,5 @@
 import { mailConfig } from "../../../configs/mailConfig.js";
-import { genPolicyExpiryMailnotif } from "../../mailing/policyExpiryNotifTemplate.js";
+import { genPolicyExpiryMailnotif } from "../../mailing/mailtemplate/policyExpiryNotifTemplate.js";
 
 export const sendPolicyExpiryMail = async (policy, daysLeft, subject) => {
     if (!policy.recp_dtl) return;

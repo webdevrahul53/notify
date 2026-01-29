@@ -3,6 +3,7 @@ import { createBirthday, deleteBirthday, getBirthdayById, getBirthdayImage, list
 import { upload } from "../config/storage.js";
 import authMiddleware from "../middleware/auth.js";
 import { setLatestBirthday } from "../controller/birthday.js";
+
 const birthdayRouter = express.Router();
 
 birthdayRouter.get("/image/:id", getBirthdayImage);
