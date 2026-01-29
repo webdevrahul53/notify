@@ -7,7 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { DataGrid } from '@mui/x-data-grid';
 import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, Chip } from '@mui/material';
 import { Link } from "react-router-dom";
-import { AccountTree, CloudUpload } from "@mui/icons-material";
+import { AccountTree, Cake, CloudUpload } from "@mui/icons-material";
 import { DataGridStyle } from "../../utilities/datagridStyle";
 import { useDispatch } from "react-redux";
 import { showSnackbar } from "../../redux/slices/snackbar";
@@ -33,15 +33,30 @@ const TableHeaderFormat = (props) => {
     { field: 'dateOfBirth', headerName: 'Date Of Birth', width: 120, renderCell: (params) => ConvertToDate(params.value)},
 
     { field: 'phoneNumber', headerName: 'Phone Number', width: 120 },
-    // { field: 'location', headerName: 'Location', width: 150 },
-    // { field: 'employeeCode', headerName: 'Employee Code', width: 150 },
-    // { field: 'anniversaryDate', headerName: 'Anniversary Date', width: 150 },
-    // { field: 'status', headerName: 'Status', width: 150 },
+    
+    {
+      field: "daysLeftForBirthday", headerName: "Birthday", width: 120,
+      renderCell: ({ value }) => {
+        if (value === null || value === undefined) return "-";
+
+        let color = "default";
+        let label = `${value} days`;
+
+        if (value === 0) {
+          color = "success";
+          label = "Today 🎉";
+        } else if (value <= 7) {
+          color = "warning";
+        }
+
+        return <Chip size="small" icon={<Cake />} label={label} color={color} sx={{ fontWeight: 600 }} />
+      },
+    },
     {
       field: "status", headerName: "Status", width: 100,
       renderCell: ({ value }) => {
         const color = value ? "success" : "warning";
-        return <Chip size="small" label={value ? "Active" : "Inactive"} color={color} />;
+        return <Chip size="small" label={value ? "Active" : "Inactive"} color={color} sx={{ borderRadius: "5px" }} />;
       },
     },
 

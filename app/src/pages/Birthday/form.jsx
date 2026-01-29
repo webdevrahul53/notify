@@ -22,7 +22,7 @@ export default function AddEditBirthday() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [image, setImage] = useState(null);
-    const { control, handleSubmit, reset, formState: {errors} } = useForm({
+    const { register, control, handleSubmit, reset, formState: {errors} } = useForm({
         defaultValues: DEFAULTVALUES
     });
 
@@ -101,7 +101,7 @@ export default function AddEditBirthday() {
     
             </div>
 
-            <div style={{display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "20px", marginTop: "20px"}}>
+            <div style={{display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px", marginTop: "20px"}}>
 
                 <Controller name="subject" control={control} defaultValue={control._formValues.subject ?? ""} 
                     rules={{ required: "Subject is required" }}
@@ -112,17 +112,19 @@ export default function AddEditBirthday() {
                 />
 
 
-                <Controller name="title" control={control} defaultValue={control._formValues.title ?? ""} 
-                    rules={{ required: "Title is required" }}
-                    render={({ field, fieldState }) => (
-                        <TextField {...field} value={field.value ?? ""} label="Title" 
-                        variant="filled" fullWidth error={!!errors.title} />
-                    )}
-                />
-            
-
-                
             </div>
+
+            
+            <textarea id="title" cols={80} rows={5} style={{padding: "10px", marginTop: "1rem"}}
+                placeholder="Enter Mail Text Here ..."
+                {...register("title", {
+                required: false,
+                maxLength: {
+                    value: 500,
+                    message: "Maximum 500 characters allowed"
+                }
+                })}
+            ></textarea>
 
             <FileUploader file={image} setFile={setImage}></FileUploader>
 
