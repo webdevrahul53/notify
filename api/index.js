@@ -53,11 +53,11 @@ app.use("/api/users", usersRouter)
 app.use("/api/activity", activityRouter)
 app.use("/api/account", accountRouter)
 app.use("/api/event", eventRouter)
+app.use("/api/birthday", birthdayRouter)
 
 
 // Agenda Scheduler setup
 await setupJobs(); // start agenda AFTER job is defined
-      
 process.on("SIGINT", async () => {
     console.log("System Gracefully shutting down...");
     await agenda.stop();
