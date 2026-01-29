@@ -8,6 +8,7 @@ import connectDB from './config/db.js';
 import activityRouter from './router/activity.js';
 import accountRouter from './router/account.js';
 import eventRouter from './router/event.js';
+import birthdayRouter from './router/birthday.js';
 dotenv.config();
 
 await connectDB();
@@ -52,6 +53,7 @@ app.use("/api/users", usersRouter)
 app.use("/api/activity", activityRouter)
 app.use("/api/account", accountRouter)
 app.use("/api/event", eventRouter)
+app.use("/api/birthday", birthdayRouter)
 
 
 

@@ -157,7 +157,7 @@ export default function BulkLinkDialog(props) {
           },
         }}
       >
-        <DialogTitle>Bulk Link</DialogTitle>
+        <DialogTitle>Bulk Upload</DialogTitle>
         <DialogContent>
           <DialogContentText>
             To map the auction process, please upload a file that contains the auctionId and process Id in a structured format.
