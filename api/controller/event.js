@@ -8,15 +8,34 @@ const listEvents = async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    
+    const searchText = req.query.search?.trim();
+    const activity = req.query.activity;
+
+    const matchStage = {};
+
+    // 🔍 Search (adjust fields as per your schema)
+    if (searchText) {
+      matchStage.$or = [
+        { title: { $regex: searchText, $options: "i" } },
+        { subject: { $regex: searchText, $options: "i" } },
+      ];
+    }
+
+    // 🎯 Activity filter
+    if (activity && mongoose.Types.ObjectId.isValid(activity)) {
+      matchStage.activityId = new mongoose.Types.ObjectId(activity);
+    }
 
     const pipeline = [
-        { $lookup: { from: "activities", localField: "activityId", foreignField: "_id", as: "activity" } },
-        { $unwind: { path: "$activity", preserveNullAndEmptyArrays: true } },
-        { $addFields: { activityName: "$activity.activityName" } },
-        { $sort: { updatedAt: -1 } },
-        { $skip: skip },
-        { $limit: limit },
-        { $project: { _v: 0 } }
+      { $match: matchStage },
+      { $lookup: { from: "activities", localField: "activityId", foreignField: "_id", as: "activity" } },
+      { $unwind: { path: "$activity", preserveNullAndEmptyArrays: true } },
+      { $addFields: { activityName: "$activity.activityName" } },
+      { $sort: { updatedAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      { $project: { _v: 0 } }
     ]
 
     const [events, total] = await Promise.all([
@@ -26,12 +45,7 @@ const listEvents = async (req, res) => {
 
     res.json({
       data: events,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: { total, page, limit, totalPages: Math.ceil(total / limit), },
     });
   } catch (error) {
     res.status(500).json({
