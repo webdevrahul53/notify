@@ -28,7 +28,10 @@ const AddEditAccount = (props) => {
     });
 
     React.useEffect(() => {
-        if(props.account) reset(props.account)
+        if(props.account) {
+            const dateOfBirth = props.account.dateOfBirth.split("T")[0]
+            reset({...props.account, dateOfBirth})
+        }
     }, [props.account])
 
     const onSubmit = async (data) => {
