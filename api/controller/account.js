@@ -49,22 +49,87 @@ const updateAccount = async (req, res) => {
     }
 };
 
+
 const accountList = async (req, res) => {
-    try {
-        const { status } = req.query
-        let query = {}
-        if(status) query.status = status;
+  try {
+    const { status } = req.query;
 
-        const accounts = await Account.find(query)
-            .select(
-                "accountName accountEmail phoneNumber employeeCode location dateOfBirth anniversaryDate status createdAt updatedAt"
-            )
-            .sort({ createdAt: -1 });
+    const matchStage = {};
+    if (status !== undefined) matchStage.status = status === "true";
 
-        res.status(200).json({ status: 200, message: "Account list fetched successfully", data: accounts });
-    } catch (error) {
-        res.status(500).json({ status: 500, message: "Error fetching account list", error: error.message });
-    }
+    const today = new Date();
+
+    const accounts = await Account.aggregate([
+      { $match: matchStage },
+      { $addFields: { birthMonth: { $month: "$dateOfBirth" }, birthDay: { $dayOfMonth: "$dateOfBirth" }, }, },
+
+      {
+        $addFields: {
+          birthdayThisYear: {
+            $dateFromParts: {
+              year: { $year: today },
+              month: "$birthMonth",
+              day: "$birthDay",
+            },
+          },
+        },
+      },
+
+      {
+        $addFields: {
+          nextBirthday: {
+            $cond: [
+              { $lt: ["$birthdayThisYear", today] },
+              {
+                $dateFromParts: {
+                  year: { $add: [{ $year: today }, 1] },
+                  month: "$birthMonth",
+                  day: "$birthDay",
+                },
+              },
+              "$birthdayThisYear",
+            ],
+          },
+        },
+      },
+
+      {
+        $addFields: {
+          daysLeftForBirthday: {
+            $ceil: {
+              $divide: [
+                { $subtract: ["$nextBirthday", today] },
+                1000 * 60 * 60 * 24,
+              ],
+            },
+          },
+        },
+      },
+
+      { $sort: { daysLeftForBirthday: 1 } },
+      {
+        $project: {
+          birthMonth: 0,
+          birthDay: 0,
+          birthdayThisYear: 0,
+          nextBirthday: 0,
+          __v: 0,
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      status: 200,
+      message: "Account list fetched successfully",
+      data: accounts,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 500,
+      message: "Error fetching account list",
+      error: error.message,
+    });
+  }
 };
 
 

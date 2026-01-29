@@ -4,7 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditSquareIcon from '@mui/icons-material/EditSquare';
 
 import { DataGrid } from '@mui/x-data-grid';
-import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, LinearProgress, Menu, MenuItem, Chip } from '@mui/material';
+import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, LinearProgress, Menu, MenuItem, Chip, FormControl, InputLabel, Select, TextField } from '@mui/material';
 import { Link, useNavigate } from "react-router-dom";
 import { CorporateFare, Today } from "@mui/icons-material";
 import { DataGridStyle } from "../../utilities/datagridStyle";
@@ -47,6 +47,9 @@ export default function Events() {
   // const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const [activityList, setActivityList] = React.useState([])
+  const [selectedActivity, setSelectedActivity] = React.useState("")
+  const [searchText, setSearchText] = React.useState("")
   const [eventsList , setEventsList] = React.useState([])
   const [currentPage, setCurrentPage] = React.useState(0)
   const [pageSize, setPageSize] = React.useState(1)
@@ -54,15 +57,11 @@ export default function Events() {
   const [rowSelectionModel, setRowSelectionModel] = React.useState({ type: "include", ids: new Set() });
   const [selectedRows, setSelectedRows] = React.useState([])
   const [selectedEvent, setSelectedEvent] = React.useState(null)
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const open = Boolean(anchorEl);
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+
+  React.useEffect(() => {
+    getActivityList()
+  }, [])
 
 
   React.useEffect(() => {
@@ -72,7 +71,7 @@ export default function Events() {
       setRowSelectionModel({ type: "include", ids: new Set() })
       setSelectedRows([])
     }
-  }, [])
+  }, [searchText, selectedActivity])
 
   React.useEffect(() => {
     if(selectedRows.length === 1){
@@ -85,10 +84,21 @@ export default function Events() {
   }, [selectedRows])
 
 
+  const getActivityList = async () => {
+    try {
+      const result = await axiosInstance.get(`/activity`).then(res => res.data)
+      console.log(result)
+      if(result.status == 200) {
+        setActivityList(result.data)
+        // dispatch(showSnackbar({ message: result.message, severity: 'info', duration: 2000}));
+      }
+    } catch (error) { }
+  }
+  
   const getEventsList = async () => {
     try {
       setLoading(true);
-      const result = await axiosInstance.get(`/event`).then(res => res.data)
+      const result = await axiosInstance.get(`/event?activity=${selectedActivity}&search=${searchText}`).then(res => res.data)
       setEventsList(result.data)
       setLoading(false);
       if(result.statuscode == 200) {
@@ -118,10 +128,22 @@ export default function Events() {
             <Button variant="outlined" size="large" className="button-css" component={Link} to={"form"}>
                 Add New <AddIcon style={{ margin: "-1px 0 0 2px", fontSize: 17, fontWeight: 600 }} />
             </Button>
+
             <IconButton disabled={selectedRows.length !== 1} onClick={() => navigate(`form?_id=${selectedEvent?._id}`)}> 
               <EditSquareIcon color={selectedRows.length == 1 ? "info" : "disabled"} /> 
             </IconButton>
             {/* <IconButton> <DeleteIcon color="error" /> </IconButton> */}
+
+            <FormControl variant="filled" style={{width: "200px", marginLeft: "auto"}}>
+              <InputLabel id="activity-select-label">Activity</InputLabel>
+              <Select labelId="activity-select-label" id="activity-select" value={selectedActivity} 
+                label="Activity" onChange={e => setSelectedActivity(e.target.value)} >
+                  <MenuItem value={""}>None</MenuItem>
+                  {activityList?.map(e => <MenuItem value={e?._id}>{e.activityName}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <TextField variant="filled" label="Search" type="text" value={searchText} 
+              onChange={e => setSearchText(e.target.value)} />
         </div>
         
         <Card>
