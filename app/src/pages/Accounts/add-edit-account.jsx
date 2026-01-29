@@ -40,7 +40,7 @@ const AddEditAccount = (props) => {
         try {
             let id = props?.account?._id
             let url = id ? `/account/${id}` : `/account`
-            const result = await axiosInstance[id ? "put":"post"](url, data).then(res => res.data)
+            const result = await axiosInstance[id ? "patch":"post"](url, data).then(res => res.data)
             
             if(result.status === 200){
                 props.onClose(); // Close the drawer
