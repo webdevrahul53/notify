@@ -27,6 +27,7 @@ export default function AddEditEvent() {
     const [activityList, setActivityList] = useState([]);
     const [accountList, setAccountList] = useState([]);
     const [image, setImage] = useState(null);
+    const [search, setSearch] = React.useState("");
     const { register, control, handleSubmit, reset, formState: {errors} } = useForm({
         defaultValues: DEFAULTVALUES
     });
@@ -160,49 +161,98 @@ export default function AddEditEvent() {
                 />
 
 
-                <Controller name="accountId" control={control} rules={{ required: "Accounts are required" }}
+                
+                <Controller
+                    name="accountId"
+                    control={control}
+                    rules={{ required: "Accounts are required" }}
                     render={({ field }) => {
-                        const allIds = accountList.map(acc => acc._id);
-                        const isAllSelected = field.value?.length === allIds.length;
+
+                        const filteredAccounts = accountList.filter(acc =>
+                        acc.accountName.toLowerCase().includes(search.toLowerCase()) ||
+                        acc.accountEmail.toLowerCase().includes(search.toLowerCase())
+                        );
+
+                        const allFilteredIds = filteredAccounts.map(acc => acc._id);
+                        const isAllSelected =
+                        allFilteredIds.length > 0 &&
+                        allFilteredIds.every(id => field.value?.includes(id));
 
                         const handleChange = (event) => {
-                            const value = event.target.value;
+                        const value = event.target.value;
 
-                            // Detect Select All click
-                            if (value.includes("all")) field.onChange(isAllSelected ? [] : allIds);
-                            else field.onChange(value);
+                        if (value.includes("all")) {
+                            field.onChange(
+                            isAllSelected
+                                ? field.value.filter(id => !allFilteredIds.includes(id))
+                                : [...new Set([...(field.value || []), ...allFilteredIds])]
+                            );
+                        } else {
+                            field.onChange(value);
+                        }
                         };
 
                         return (
                         <FormControl fullWidth variant="filled" error={!!errors?.accountId}>
                             <InputLabel>Accounts</InputLabel>
 
-                            <Select multiple value={field.value || []} onChange={handleChange}
+                            <Select
+                            multiple
+                            value={field.value || []}
+                            onChange={handleChange}
                             renderValue={(selected) =>
                                 accountList
                                 .filter(acc => selected.includes(acc._id))
                                 .map(acc => acc.accountName)
                                 .join(", ")
                             }
+                            MenuProps={{ autoFocus: false }}
                             >
-                            {/* Select All */}
+
+                            {/* 🔍 Search Box */}
+                            <MenuItem disableRipple>
+                                <TextField
+                                autoFocus
+                                size="small"
+                                fullWidth
+                                placeholder="Search by name or email"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                onKeyDown={(e) => e.stopPropagation()}
+                                />
+                            </MenuItem>
+
+                            {/* Select All (filtered) */}
                             <MenuItem value="all">
                                 <Checkbox checked={isAllSelected} />
                                 <ListItemText primary="Select All" />
                             </MenuItem>
 
-                            {accountList.map((account) => (
+                            {filteredAccounts.map(account => (
                                 <MenuItem key={account._id} value={account._id}>
-                                    <Checkbox checked={field.value?.includes(account._id)} />
-                                    <ListItemText primary={account.accountName} />
+                                <Checkbox checked={field.value?.includes(account._id)} />
+                                <ListItemText
+                                    primary={
+                                    <div style={{ padding: "0 8px" }}>
+                                        <div>{account.accountName}</div>
+                                        <small style={{ color: "gray" }}>
+                                        {account.accountEmail}
+                                        </small>
+                                    </div>
+                                    }
+                                />
                                 </MenuItem>
                             ))}
+
+                            {filteredAccounts.length === 0 && (
+                                <MenuItem disabled>
+                                <ListItemText primary="No accounts found" />
+                                </MenuItem>
+                            )}
                             </Select>
 
                             {errors?.accountId && (
-                            <FormHelperText>
-                                {errors.accountId.message}
-                            </FormHelperText>
+                            <FormHelperText>{errors.accountId.message}</FormHelperText>
                             )}
                         </FormControl>
                         );
