@@ -58,21 +58,16 @@ app.use("/api/birthday", birthdayRouter)
 
 
 // Agenda Scheduler setup
-await setupJobs(); // start agenda AFTER job is defined
-// process.on("SIGINT", async () => {
-//     console.log("System Gracefully shutting down...");
-//     await agenda.stop();
-//     process.exit(0);
-// });
+// start agenda AFTER job is defined
+await setupJobs();
 process.on("SIGTERM", async () => {
     if (agenda) await agenda.stop();
-    if (mongoClient) await mongoClient.close();
     process.exit(0);
 });
 
 
 
 // No host param → cluster shares the TCP handle
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`)
+app.listen(port, host, () => {
+    console.log(`Server is running on ${host}:${port}`)
 })

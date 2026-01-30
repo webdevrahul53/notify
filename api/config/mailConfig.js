@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
 export const mailConfig = async (toemls=[], ccemls=[], bccemls=[], subjct, maildtl, mailContent) => {
-  console.log('mailx');
   const from_name = `Shyam Metalics`;
   const from_email = process.env.EMAIL_USR;
 
