@@ -106,7 +106,7 @@ const accountList = async (req, res) => {
         },
       },
 
-      { $sort: { daysLeftForBirthday: 1 } },
+      { $sort: { updatedAt: -1 } },
       {
         $project: {
           birthMonth: 0,

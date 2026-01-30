@@ -1,9 +1,13 @@
-// configs/mailConfig.js
 import nodemailer from "nodemailer";
-import dotenv from "dotenv";
-dotenv.config({ quiet: true });
 
-export const mailConfig = async (toemls=[], ccemls=[], bccemls=[], subjct, maildtl, mailContent) => {
+export const mailConfig = async (
+  toemls = [],
+  ccemls = [],
+  bccemls = [],
+  subjct,
+  maildtl,
+  mailContent
+) => {
   const from_name = `Shyam Metalics`;
   const from_email = process.env.EMAIL_USR;
 
@@ -24,8 +28,36 @@ export const mailConfig = async (toemls=[], ccemls=[], bccemls=[], subjct, maild
     cc: ccemls,
     bcc: bccemls,
     subject: subjct,
-    html: maildtl,
-    attachments: [{ filename: mailContent.filename, content: mailContent.content, contentType: mailContent.contentType }],
+
+    html: `
+      <html>
+        <body>
+          <div><strong>${maildtl?.title || ""}</strong></div>
+
+          ${
+            mailContent
+              ? `<img 
+                   src="cid:${mailContent.cid}" 
+                   alt="Content Image"
+                   style="width:100%;height:auto;"
+                 />`
+              : ""
+          }
+        </body>
+      </html>
+    `,
+
+    attachments: mailContent
+      ? [
+          {
+            filename: mailContent.filename,
+            content: mailContent.content,
+            contentType: mailContent.contentType,
+            cid: mailContent.cid, // ✅ STRING
+            disposition: "inline" // ✅ force inline
+          }
+        ]
+      : [],
   };
 
   const info = await transporter.sendMail(mailOptions);

@@ -6,7 +6,6 @@ export const getGridFSFileForMail = async (fileId) => {
     const bucket = getBucket();
     const _id = new mongoose.Types.ObjectId(fileId);
 
-    // fetch file metadata
     const fileDoc = await mongoose.connection.db
         .collection("uploads.files")
         .findOne({ _id });
@@ -15,12 +14,12 @@ export const getGridFSFileForMail = async (fileId) => {
         throw new Error("File not found in GridFS");
     }
 
-    // create stream
     const stream = bucket.openDownloadStream(_id);
 
     return {
+        cid: fileDoc._id.toString(),
         filename: fileDoc.filename,
-        contentType: fileDoc.contentType || "application/octet-stream",
-        content: stream, // <-- THIS IS THE MAGIC
+        contentType: fileDoc.contentType || "image/png",
+        content: stream,
     };
 };
