@@ -1,8 +1,6 @@
-import Event from "../../model/event.js";
 import { mailConfig } from "../../config/mailConfig.js";
-import { getGridFSFileForMail } from "../gridfsFile.js";
 
-export const sendMailNotif = async (notificationDetails) => {
+export const sendMailNotif = async (notificationDetails, htmlContent, attachment=[]) => {
     try {
         if (!notificationDetails) {
             return { message: "Event not found" };
@@ -13,17 +11,13 @@ export const sendMailNotif = async (notificationDetails) => {
             ? notificationDetails.accounts.map(acc => acc.email).filter(email => !!email).join(", ")
             : null;
 
-        // 🔹 Prepare attachment from GridFS
-        const attachment = await getGridFSFileForMail(notificationDetails.contentImage?._id);
-        // console.log(attachment);
-
         // 🔹 Call your existing mailConfig
         await mailConfig(
             [allToMailIds],
             [],
             [],
             notificationDetails.subject,
-            notificationDetails,
+            htmlContent,
             attachment,
         );
 
