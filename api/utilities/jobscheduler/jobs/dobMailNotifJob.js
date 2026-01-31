@@ -1,6 +1,7 @@
 import { sendMailNotif } from "../../mailing/sendMailNotif.js";
 import { genDobnotif } from "../../mailing/mailtemplate/dobNotifTemplate.jsx";
 import { getGridFSFileForMail } from "../../gridfsFile.js";
+import moment from "moment";
 
 export const emailInfo = async (dob) => {
     try {
@@ -20,7 +21,7 @@ export const defineDobMailJob = (agenda) => {
         agenda.define("send dob notification", async job => {
             // console.log("Sending dob notification", job.attrs.data);
             const { dob } = job.attrs.data;
-            console.log(`Dob schedule date: ${dob?.scheduleDate}`);
+            console.log(`Dob schedule date: ${moment(dob?.scheduleDate, "DD-MM-YYYY HH:mm:ss").format("DD-MM-YYYY HH:mm:ss")}`);
             await emailInfo(dob);
             console.log(`✅ Reminder sent to All Recipients for dob ${dob?.subject}`);
         });

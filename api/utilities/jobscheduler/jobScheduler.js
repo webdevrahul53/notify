@@ -32,7 +32,7 @@ export const getDobDetails = async (req, res) => {
   try {
     const today = moment();
     // console.log(today);
-    const accounts = await Account.find().lean();
+    const accounts = await Account.find({ status: true }).lean();
     const dobAccounts = accounts.filter(acc => {
       if (!acc.dateOfBirth) return false;
       const dobMoment = moment(acc.dateOfBirth, "DD-MM-YYYY");
@@ -61,15 +61,15 @@ export const getDobDetails = async (req, res) => {
 }
 export const getEventDetails = async (req, res) => {
   try {
-    const today = new Date();
-    // console.log(today);
-    const startOfDay = new Date(today);
-    startOfDay.setHours(0, 0, 0, 0);
+    const now = new Date();
+    // console.log(now);
+    // const startOfDay = new Date(now);
+    // startOfDay.setHours(0, 0, 0, 0);
 
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
+    // const endOfDay = new Date(now);
+    // endOfDay.setHours(23, 59, 59, 999);
     const pipeline = [
-      { $match: { scheduleDate: { $gte: startOfDay, $lt: endOfDay } } },
+      { $match: { scheduleDate: { $gte: now }, status: true } },
       { $lookup: { from: "activities", localField: "activityId", foreignField: "_id", as: "activity" } },
       { $unwind: { path: "$activity", preserveNullAndEmptyArrays: true } },
       {
@@ -123,18 +123,29 @@ const scheduleDobRecords = async (agenda, dobRecords) => {
     const hour = DOB_HOUR || 0;   // default 00
     const minute = DOB_MINUTE || 0; // default 00
 
-    // 🔹 Build scheduled datetime
-    const scheduleAt = moment.tz(dob.scheduleDate, "DD-MM-YYYY", "Asia/Kolkata").set({ hour, minute, second: 0, millisecond: 0 });
+    // 🔹 Build DOB for current year
+    let scheduleAt = moment
+      .tz(dob.scheduleDate, "DD-MM-YYYY", "Asia/Kolkata")
+      .year(now.year())
+      .set({ hour, minute, second: 0, millisecond: 0 });
 
     // const eventDate = moment(event.scheduleDate);
     if (!scheduleAt.isValid()) continue;
 
-    // 🔹 Schedule only if time is in future
-    if (scheduleAt.isAfter(now)) {
-      await agenda.schedule(scheduleAt.toDate(), "send dob notification", { dob });
-      console.log('Scheduler scheduled for dob:', dob.subject);
-      console.log(`🕓 Scheduled dob mail at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
+    // 🔹 If DOB time already passed → move to next year
+    if (scheduleAt.isSameOrBefore(now)) {
+      scheduleAt.add(1, "year");
     }
+
+    // 🔹 Schedule safely
+    await agenda.schedule(
+      scheduleAt.toDate(),
+      "send dob notification",
+      { dob },
+      { unique: { "data.dob._id": dob._id } }
+    );
+    console.log('Scheduler scheduled for dob:', dob.subject);
+    console.log(`🎂 DOB Scheduled at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
   }
 };
 const scheduleEventRecords = async (agenda, eventRecords) => {
@@ -156,9 +167,14 @@ const scheduleEventRecords = async (agenda, eventRecords) => {
 
     // 🔹 Schedule only if time is in future
     if (scheduleAt.isAfter(now)) {
-      await agenda.schedule(scheduleAt.toDate(), "send event notification", { event });
+      await agenda.schedule(
+        scheduleAt.toDate(),
+        "send event notification",
+        { event },
+        { unique: { "data.event._id": event._id } }
+      );
       console.log('Scheduler scheduled for event:', event.subject);
-      console.log(`🕓 Scheduled event mail at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
+      console.log(`🕓 EVENT Scheduled at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
     }
   }
 };
@@ -172,12 +188,12 @@ export const setupJobs = async () => {
 
   try {
     // dob notification
-    await agenda.cancel({ name: "send dob notification" });
+    // await agenda.cancel({ name: "send dob notification" });
     const dobRecords = await getDobDetails();
     await scheduleDobRecords(agenda, dobRecords);
 
     // event notification
-    await agenda.cancel({ name: "send event notification" });
+    // await agenda.cancel({ name: "send event notification" });
     const eventRecords = await getEventDetails();
     await scheduleEventRecords(agenda, eventRecords);
 
@@ -192,12 +208,12 @@ export const setupJobs = async () => {
       console.log("🔁 Refreshing scheduled jobs...");
 
       // dob notification
-      await agenda.cancel({ name: "send dob notification" });
+      // await agenda.cancel({ name: "send dob notification" });
       const dobRecords = await getDobDetails();
       await scheduleDobRecords(agenda, dobRecords);
 
       // event notification
-      await agenda.cancel({ name: "send event notification" });
+      // await agenda.cancel({ name: "send event notification" });
       const eventRecords = await getEventDetails();
       await scheduleEventRecords(agenda, eventRecords);
 
