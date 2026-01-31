@@ -22,6 +22,7 @@ export default function AddEditBirthday() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [image, setImage] = useState(null);
+    const [isLoading, setLoading] = useState(false);
     const { register, control, handleSubmit, reset, formState: {errors} } = useForm({
         defaultValues: DEFAULTVALUES
     });
@@ -52,27 +53,30 @@ export default function AddEditBirthday() {
 
     
     const onSubmit = async (data) => {
-        if(image?.file) data.contentImage = image?.file;
-        else delete data.contentImage
-        console.log(image)
-        const formData = new FormData();
-        for (const key in data) formData.append(key, data[key]);
-
+        if(isLoading) return;
         try {
+            setLoading(true)
+            if(image?.file) data.contentImage = image?.file;
+            else delete data.contentImage
+            console.log(image)
+            const formData = new FormData();
+            for (const key in data) formData.append(key, data[key]);
             const url = _id ? `/birthday/${_id}` : "/birthday"
             const response = await axiosInstance[_id ? "put":"post"](url, formData).then(res => res.data)
             console.log(response)
             if (response.status === 200) {
                 navigate('/birthday');
                 dispatch(showSnackbar({ message: response.message, severity: 'success', duration: 2000 }));
+                setLoading(false)
             }
             else {
                 console.error("Error creating Deed record:", response.message);
+                setLoading(false)
             }
 
         }catch (error) {
             dispatch(showSnackbar({ message: error.message, severity: 'error', duration: 2000 }));
-
+            setLoading(false)
         }
     };
     
@@ -93,7 +97,7 @@ export default function AddEditBirthday() {
 
                 </div>
                 <div style={{display: "flex", gap: "1rem"}}>
-                    <Button variant="contained" size="large" type="submit">{_id ? "UPDATE":"SAVE"}</Button>
+                    <Button variant="contained" size="large" type="submit" disabled={isLoading}>{_id ? "UPDATE":"SAVE"}</Button>
                     {!_id && <Button variant="outlined" size="large" color="warning" type="button" onClick={() => {
                         reset(DEFAULTVALUES)
                     }}>Reset</Button>}
