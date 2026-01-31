@@ -53,9 +53,17 @@ const updateAccount = async (req, res) => {
 const accountList = async (req, res) => {
   try {
     const { status } = req.query;
+    const searchText = req.query.search?.trim();
 
     const matchStage = {};
     if (status !== undefined) matchStage.status = status === "true";
+    if (searchText) {
+      matchStage.$or = [
+        { accountName: { $regex: searchText, $options: "i" } },
+        { accountEmail: { $regex: searchText, $options: "i" } },
+      ];
+    }
+
 
     const today = new Date();
 

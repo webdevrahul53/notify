@@ -5,7 +5,7 @@ import EditSquareIcon from '@mui/icons-material/EditSquare';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import { DataGrid } from '@mui/x-data-grid';
-import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, Chip } from '@mui/material';
+import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, Chip, TextField } from '@mui/material';
 import { Link } from "react-router-dom";
 import { AccountTree, Cake, CloudUpload } from "@mui/icons-material";
 import { DataGridStyle } from "../../utilities/datagridStyle";
@@ -76,12 +76,13 @@ export default function Accounts() {
   const [rowSelectionModel, setRowSelectionModel] = React.useState({ type: "include", ids: new Set() });
   const [selectedRows, setSelectedRows] = React.useState([])
   const [selectedAccounts, setSelectedAccounts] = React.useState(null)
+  const [searchText, setSearchText] = React.useState("")
   
 
 
   React.useEffect(() => {
     getAccountsList();
-  }, [])
+  }, [searchText])
 
   
   React.useEffect(() => {
@@ -93,7 +94,7 @@ export default function Accounts() {
 
   const getAccountsList = async () => {
     try {
-      const result = await axiosInstance.get(`/account`).then(res => res.data)
+      const result = await axiosInstance.get(`/account?search=${searchText}`).then(res => res.data)
       if(result.status == 200) {
         setAccountsList(result.data)
         // dispatch(showSnackbar({ message: result.message, severity: 'info', duration: 2000}));
@@ -167,6 +168,8 @@ export default function Accounts() {
             <IconButton onClick={() => deleteAccounts()}> <DeleteIcon color={!!selectedRows.length ? "error" : "disabled"} /> </IconButton>
             {/* {!!selectedRows.length && <IconButton onClick={() => deleteMaterials()}> <DeleteIcon color="error" /> </IconButton>} */}
 
+            <TextField variant="filled" label="Search" type="text" value={searchText}  style={{width: "300px", marginLeft: "auto"}}
+              onChange={e => setSearchText(e.target.value)} />
         </div>
         
         <Card>
