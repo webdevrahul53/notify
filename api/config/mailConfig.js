@@ -6,7 +6,7 @@ export const mailConfig = async (
   bccemls = [],
   subjct,
   maildtl,
-  mailContent
+  mailContent = []
 ) => {
   const from_name = `Shyam Metalics`;
   const from_email = process.env.EMAIL_USR;
@@ -22,42 +22,25 @@ export const mailConfig = async (
     },
   });
 
+  if (typeof maildtl !== "string") {
+    throw new Error("Email HTML must be a string");
+  }
+
   const mailOptions = {
     from: `${from_name} <${from_email}>`,
     to: toemls,
     cc: ccemls,
     bcc: bccemls,
     subject: subjct,
+    html: maildtl,
 
-    html: `
-      <html>
-        <body>
-          <div><strong>${maildtl?.title || ""}</strong></div>
-
-          ${
-            mailContent
-              ? `<img 
-                   src="cid:${mailContent.cid}" 
-                   alt="Content Image"
-                   style="width:100%;height:auto;"
-                 />`
-              : ""
-          }
-        </body>
-      </html>
-    `,
-
-    attachments: mailContent
-      ? [
-          {
-            filename: mailContent.filename,
-            content: mailContent.content,
-            contentType: mailContent.contentType,
-            cid: mailContent.cid, // ✅ STRING
-            disposition: "inline" // ✅ force inline
-          }
-        ]
-      : [],
+    attachments: Array.isArray(mailContent) ? mailContent.map(img => ({
+      filename: img.filename,
+      content: img.content,
+      contentType: img.contentType,
+      cid: img.cid,
+      disposition: "inline",
+    })) : []
   };
 
   const info = await transporter.sendMail(mailOptions);
