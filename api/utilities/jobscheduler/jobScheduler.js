@@ -6,6 +6,7 @@ import moment from "moment";
 import { defineEventMailJob } from "./jobs/eventMailNotifJob.js";
 import { defineDobMailJob } from "./jobs/dobMailNotifJob.js";
 
+// Scheduler Refresh Timespan
 const DEFAULT_REFRESH_MS = process.env.REMINDER_REFRESH_INTERVAL_MS
   ? parseInt(process.env.REMINDER_REFRESH_INTERVAL_MS, 10)
   : 60 * 1000; // 10 seconds
@@ -31,8 +32,8 @@ const EVENT_MINUTE = process.env.EVENT_SCHEDULE_MINUTE
 export const getDobDetails = async (req, res) => {
   try {
     const today = moment();
-    // console.log(today);
-    const accounts = await Account.find().lean();
+
+    const accounts = await Account.find({ status: true }).lean();
     const dobAccounts = accounts.filter(acc => {
       if (!acc.dateOfBirth) return false;
       const dobMoment = moment(acc.dateOfBirth, "DD-MM-YYYY");
@@ -44,6 +45,8 @@ export const getDobDetails = async (req, res) => {
       dateOfBirth: moment(acc.dateOfBirth, "DD-MM-YYYY").format("DD-MM-YYYY"),
     }));
 
+    if (!dobAccounts || dobAccounts?.length === 0) return []
+
     const dobPipeline = [
       { $match: { isLatest: true, status: true } },
       { $lookup: { from: "uploads.files", localField: "contentImage", foreignField: "_id", as: "contentImage" } },
@@ -51,7 +54,6 @@ export const getDobDetails = async (req, res) => {
       { $project: { __v: 0, createdAt: 0, updatedAt: 0 } }
     ];
     const dobContent = await Birthday.aggregate(dobPipeline);
-
     const dobInfo = Array.of({ ...dobContent[0], scheduleDate: today.format("DD-MM-YYYY"), accounts: dobAccounts })
     // res.status(200).json({ data: dobInfo })
     return dobInfo;
@@ -61,15 +63,15 @@ export const getDobDetails = async (req, res) => {
 }
 export const getEventDetails = async (req, res) => {
   try {
-    const today = new Date();
-    // console.log(today);
-    const startOfDay = new Date(today);
+    const now = new Date();
+    const startOfDay = new Date(now);
     startOfDay.setHours(0, 0, 0, 0);
 
-    const endOfDay = new Date(today);
+    const endOfDay = new Date(now);
     endOfDay.setHours(23, 59, 59, 999);
+    
     const pipeline = [
-      { $match: { scheduleDate: { $gte: startOfDay, $lt: endOfDay } } },
+      { $match: { scheduleDate: { $gte: startOfDay, $lte: endOfDay }, status: true } },
       { $lookup: { from: "activities", localField: "activityId", foreignField: "_id", as: "activity" } },
       { $unwind: { path: "$activity", preserveNullAndEmptyArrays: true } },
       {
@@ -91,7 +93,6 @@ export const getEventDetails = async (req, res) => {
       },
       { $lookup: { from: "uploads.files", localField: "contentImage", foreignField: "_id", as: "contentImage" } },
       { $unwind: { path: "$contentImage", preserveNullAndEmptyArrays: true } },
-      { $sort: { createdAt: 1 } },
       {
         $project: {
           activityId: 0,
@@ -101,7 +102,8 @@ export const getEventDetails = async (req, res) => {
           accountId: 0,
           __v: 0
         }
-      }
+      },
+      { $sort: { scheduleDate: 1 } }
     ]
     const events = await Event.aggregate(pipeline);
     // res.status(200).json({ data: events })
@@ -123,17 +125,25 @@ const scheduleDobRecords = async (agenda, dobRecords) => {
     const hour = DOB_HOUR || 0;   // default 00
     const minute = DOB_MINUTE || 0; // default 00
 
-    // 🔹 Build scheduled datetime
-    const scheduleAt = moment.tz(dob.scheduleDate, "DD-MM-YYYY", "Asia/Kolkata").set({ hour, minute, second: 0, millisecond: 0 });
+    // 🔹 Build DOB for current year
+    let scheduleAt = moment
+      .tz(dob.scheduleDate, "DD-MM-YYYY", "Asia/Kolkata")
+      .year(now.year())
+      .set({ hour, minute, second: 0, millisecond: 0 });
 
-    // const eventDate = moment(event.scheduleDate);
     if (!scheduleAt.isValid()) continue;
 
-    // 🔹 Schedule only if time is in future
+    // console.log(scheduleAt.isAfter(now));
+    // 🔹 Schedule safely
     if (scheduleAt.isAfter(now)) {
-      await agenda.schedule(scheduleAt.toDate(), "send dob notification", { dob });
+      await agenda.schedule(
+        scheduleAt.toDate(),
+        "send dob notification",
+        { dob },
+        { unique: { "data.dob._id": dob._id } }
+      );
       console.log('Scheduler scheduled for dob:', dob.subject);
-      console.log(`🕓 Scheduled dob mail at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
+      console.log(`🎂 DOB Scheduled at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
     }
   }
 };
@@ -151,14 +161,18 @@ const scheduleEventRecords = async (agenda, eventRecords) => {
     // 🔹 Build scheduled datetime
     const scheduleAt = moment.tz(event.scheduleDate, "Asia/Kolkata").set({ hour, minute, second: 0, millisecond: 0 });
 
-    // const eventDate = moment(event.scheduleDate);
     if (!scheduleAt.isValid()) continue;
 
     // 🔹 Schedule only if time is in future
     if (scheduleAt.isAfter(now)) {
-      await agenda.schedule(scheduleAt.toDate(), "send event notification", { event });
+      await agenda.schedule(
+        scheduleAt.toDate(),
+        "send event notification",
+        { event },
+        { unique: { "data.event._id": event._id } }
+      );
       console.log('Scheduler scheduled for event:', event.subject);
-      console.log(`🕓 Scheduled event mail at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
+      console.log(`🕓 EVENT Scheduled at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
     }
   }
 };

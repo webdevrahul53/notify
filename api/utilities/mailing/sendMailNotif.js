@@ -12,7 +12,7 @@ export const sendMailNotif = async (notificationDetails, htmlContent, attachment
             : null;
 
         // 🔹 Call your existing mailConfig
-        await mailConfig(
+        const mailResInfo = await mailConfig(
             [allToMailIds],
             [],
             [],
@@ -21,7 +21,7 @@ export const sendMailNotif = async (notificationDetails, htmlContent, attachment
             attachment,
         );
 
-        return { message: `✅ Mail Notification Sent successfully.` }
+        return { message: `✅ Mail Notification successfully sent.`, res: mailResInfo }
     } catch (error) {
         console.error(error);
         throw new Error(`Failed to send mail: ${error.message}`);
