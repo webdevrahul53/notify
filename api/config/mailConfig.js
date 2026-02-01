@@ -45,5 +45,5 @@ export const mailConfig = async (
 
   const info = await transporter.sendMail(mailOptions);
   console.log("📨 Mail sent:", info.response);
-  return info;
+  return info.response;
 };

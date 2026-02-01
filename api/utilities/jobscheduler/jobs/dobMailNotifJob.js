@@ -9,7 +9,9 @@ export const emailInfo = async (dob) => {
         // 🔹 Generate HTML WITH CID
         const htmlContent = await genDobnotif(dob, imageFile?.cid);
         const mailResponse = await sendMailNotif(dob, htmlContent, imageFile ? [imageFile] : []);
-        return { message: `✅ Mail Notification Sent successfully.`, response: mailResponse };
+
+        if (mailResponse.res) return { message: `✅ Mail Notification Sent successfully.`, success: true };
+        else return { message: `✅ Mail Notification Sent successfully.`, success: false };
     } catch (error) {
         console.error(error?.message)
     }
@@ -20,9 +22,9 @@ export const defineDobMailJob = (agenda) => {
         agenda.define("send dob notification", async job => {
             // console.log("Sending dob notification", job.attrs.data);
             const { dob } = job.attrs.data;
-            console.log(`Dob schedule date: ${dob?.scheduleDate}`);
-            await emailInfo(dob);
-            console.log(`✅ Reminder sent to All Recipients for dob ${dob?.subject}`);
+            const mailResponse = await emailInfo(dob);
+            if (mailResponse.success) console.log(`✅ Reminder successfully sent to All Recipients for dob ${dob?.subject}`);
+            else console.log(`✅ DOB Reminder sending Failed for ${dob?.subject}`);
         });
     } catch (error) {
         console.error(error)
