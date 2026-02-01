@@ -1,7 +1,6 @@
 import { sendMailNotif } from "../../mailing/sendMailNotif.js";
 import { genEventnotif } from "../../mailing/mailtemplate/eventNotifTemplate.jsx";
 import { getGridFSFileForMail } from "../../gridfsFile.js";
-import moment from "moment";
 
 export const emailInfo = async (event) => {
     try {
@@ -10,7 +9,9 @@ export const emailInfo = async (event) => {
         // 🔹 Generate HTML WITH CID
         const htmlContent = await genEventnotif(event, imageFile?.cid);
         const mailResponse = await sendMailNotif(event, htmlContent, imageFile ? [imageFile] : []);
-        return { message: `✅ Mail Notification Sent successfully.`, response: mailResponse };
+
+        if (mailResponse.res) return { message: `✅ Mail Notification Sent successfully.`, success: true };
+        else return { message: `✅ Mail Notification Sent successfully.`, success: false };
     } catch (error) {
         console.error(error?.message)
     }
@@ -21,9 +22,9 @@ export const defineEventMailJob = (agenda) => {
         agenda.define("send event notification", async job => {
             // console.log("Sending event notification", job.attrs.data);
             const { event } = job.attrs.data;
-            console.log(`Event schedule date: ${moment(event?.scheduleDate).format("DD-MM-YYYY HH:mm:ss")}`);
-            await emailInfo(event);
-            console.log(`✅ Reminder sent to All Recipients for event ${event?.activity?.activityName}`);
+            const mailResponse = await emailInfo(event);
+            if (mailResponse.success) console.log(`✅ Reminder successfully sent to All Recipients for event ${event?.activity?.activityName}`);
+            else console.log(`✅ Event Reminder sending Failed for ${event?.activity?.activityName}`);
         });
     } catch (error) {
         console.error(error)
