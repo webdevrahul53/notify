@@ -71,18 +71,19 @@ export default function Accounts() {
   const [open, setOpen] = React.useState(false)
   const [openDialog, setOpenDialog] = React.useState(false)
   const [accountList , setAccountsList] = React.useState([])
-  const [currentPage, setCurrentPage] = React.useState(0)
-  const [pageSize, setPageSize] = React.useState(1)
   const [rowSelectionModel, setRowSelectionModel] = React.useState({ type: "include", ids: new Set() });
   const [selectedRows, setSelectedRows] = React.useState([])
   const [selectedAccounts, setSelectedAccounts] = React.useState(null)
   const [searchText, setSearchText] = React.useState("")
-  
+  const [currentPage, setCurrentPage] = React.useState(0)
+  const [pageSize, setPageSize] = React.useState(5)
+  const [totalCount, setTotalCount] = React.useState(0);
+
 
 
   React.useEffect(() => {
     getAccountsList();
-  }, [searchText])
+  }, [searchText, currentPage, pageSize])
 
   
   React.useEffect(() => {
@@ -94,9 +95,10 @@ export default function Accounts() {
 
   const getAccountsList = async () => {
     try {
-      const result = await axiosInstance.get(`/account?search=${searchText}`).then(res => res.data)
+      const result = await axiosInstance.get(`/account?page=${currentPage+1}&limit=${pageSize}&search=${searchText}`).then(res => res.data)
       if(result.status == 200) {
         setAccountsList(result.data)
+        setTotalCount(result?.pagination?.total)
         // dispatch(showSnackbar({ message: result.message, severity: 'info', duration: 2000}));
       }
     } catch (error) {
@@ -175,9 +177,7 @@ export default function Accounts() {
         <Card>
             <CardContent style={{ padding: "0px" }}>
                 <DataGrid sx={DataGridStyle} rows={accountList} columns={TableHeaderFormat({currentPage, pageSize})} getRowId={row => row._id}
-                  pageSizeOptions={[5]} checkboxSelection disableRowSelectionOnClick
-                  initialState={{ pagination: { paginationModel: { pageSize: 5, }, }, }} 
-                  rowSelectionModel={rowSelectionModel}
+                  rowSelectionModel={rowSelectionModel} checkboxSelection disableRowSelectionOnClick
                   onRowSelectionModelChange={event => {
                     // console.log(event)
                     setRowSelectionModel(event);
@@ -186,6 +186,9 @@ export default function Accounts() {
                     // console.log(selectedIDs)
                     setSelectedRows(selectedIDs)
                   }}
+                  paginationMode="server" rowCount={totalCount}
+                  pageSizeOptions={[5, 10, 15, 30]}
+                  initialState={{ pagination: { paginationModel: { page: currentPage, pageSize, }, }, }}
                   onPaginationModelChange={(e) => {
                     setCurrentPage(e.page)
                     setPageSize(e.pageSize)

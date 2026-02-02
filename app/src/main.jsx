@@ -7,6 +7,8 @@ import store, { persistor } from './redux/store';
 import { PersistGate } from 'redux-persist/integration/react';
 import MUISnackbar from './components/MUISnackbar.jsx';
 import { injectStore } from './redux/storeAccessor.js';
+import { ThemeProvider } from '@mui/material';
+import theme from './utilities/theme.jsx';
 
 injectStore(store)
 
@@ -14,8 +16,10 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <MUISnackbar />
-        <App />
+        <ThemeProvider theme={theme}>
+          <MUISnackbar />
+          <App />
+        </ThemeProvider>
       </PersistGate>
     </Provider>
   </StrictMode>,

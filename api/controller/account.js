@@ -52,6 +52,10 @@ const updateAccount = async (req, res) => {
 
 const accountList = async (req, res) => {
   try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
     const { status } = req.query;
     const searchText = req.query.search?.trim();
 
@@ -67,7 +71,7 @@ const accountList = async (req, res) => {
 
     const today = new Date();
 
-    const accounts = await Account.aggregate([
+    const pipeline = [
       { $match: matchStage },
       { $addFields: { birthMonth: { $month: "$dateOfBirth" }, birthDay: { $dayOfMonth: "$dateOfBirth" }, }, },
 
@@ -115,6 +119,8 @@ const accountList = async (req, res) => {
       },
 
       { $sort: { updatedAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
       {
         $project: {
           birthMonth: 0,
@@ -124,12 +130,18 @@ const accountList = async (req, res) => {
           __v: 0,
         },
       },
-    ]);
+    ]
+
+    const [accounts, total] = await Promise.all([
+      Account.aggregate(pipeline),
+      Account.countDocuments()
+    ])
 
     res.status(200).json({
       status: 200,
       message: "Account list fetched successfully",
       data: accounts,
+      pagination: { total, page, limit, totalPages: Math.ceil(total / limit), }
     });
   } catch (error) {
     res.status(500).json({
