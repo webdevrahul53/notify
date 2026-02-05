@@ -33,10 +33,10 @@ const AddEditUsers = (props) => {
         
         try {
             let id = props?.user?._id
-            let url = id ? `/prcss/update?id=${id}` : `/prcss/create`
+            let url = id ? `/users/register/${id}` : `/users/register`
             const result = await axiosInstance[id ? "put":"post"](url, data).then(res => res.data)
             
-            if(result.statuscode === 201){
+            if(result.status === 200){
                 props.onClose(); // Close the drawer
                 dispatch(showSnackbar({ message: result.message, severity: 'success', }));
             }

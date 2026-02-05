@@ -2,6 +2,7 @@ import Users from "../model/users.js"
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { generateAccessToken, generateRefreshToken } from "../config/token.js";
+import mongoose from "mongoose";
 
 const usersList = async (req, res) => {
     let data = await Users.find();
@@ -75,12 +76,13 @@ const registerUser = async (req, res) => {
 
 
 const deleteUser = async (req, res) => {
-    const { id } = req.params;
-    if(!id) return res.status(400).json({ status: 400, message: "User ID is required" });
+    
+    const arr = req.body.map(e => new mongoose.Types.ObjectId(e))
+    // if(!id) return res.status(400).json({ status: 400, message: "User ID is required" });
 
     try {
-        const response = await Users.findByIdAndDelete(id);
-        res.json({ status: 200, message: `User with id ${id} deleted successfully`, data: response });
+        const response = await Users.updateMany({_id: { $in: arr }}, { status: false });
+        res.json({ status: 200, message: `Users deleted successfully`, data: response });
     }catch (error) {
         console.log(error)
     }
