@@ -5,7 +5,7 @@ import EditSquareIcon from '@mui/icons-material/EditSquare';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import { DataGrid } from '@mui/x-data-grid';
-import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer } from '@mui/material';
+import { Button, Typography, IconButton, Card, CardContent, Breadcrumbs, Drawer, Chip } from '@mui/material';
 import { Link } from "react-router-dom";
 import { AccountTree } from "@mui/icons-material";
 import { DataGridStyle } from "../../utilities/datagridStyle";
@@ -29,7 +29,13 @@ const TableHeaderFormat = (props) => {
     },
     { field: 'fullName', headerName: 'Full Name', width: 150 },
     { field: 'email', headerName: 'Email', width: 240 },
-    { field: 'status', headerName: 'Status', width: 150 },
+    {
+      field: "status", headerName: "Status", width: 100,
+      renderCell: ({ value }) => {
+        const color = value ? "success" : "warning";
+        return <Chip size="small" label={value ? "Active" : "Inactive"} color={color} sx={{ borderRadius: "5px" }} />;
+      },
+    },
 
     { field: 'createdAt', headerName: 'Created At', width: 180, renderCell: (params) => ConvertToDateTime(params.value)},
     { field: 'updatedAt', headerName: 'Updated At', width: 180, renderCell: params => ConvertToDateTime(params.value)},
@@ -76,9 +82,9 @@ export default function Users() {
 
   const deleteUsers = async () => {
     try {
-      const result = await axiosInstance.put(`/prcss/removeall`, selectedRows).then(res => res.data)
-      console.log(result)
-      if(result.statuscode == 201) {
+      const result = await axiosInstance.put(`/users/deleteMultiple`, selectedRows).then(res => res.data)
+
+      if(result.status == 200) {
         getUsersList();
         dispatch(showSnackbar({ message: result.message, severity: 'warning', duration: 2000}));
       }else{
@@ -122,9 +128,8 @@ export default function Users() {
             }}>
                 Add New <AddIcon style={{ margin: "-1px 0 0 2px", fontSize: 17, fontWeight: 600 }} />
             </Button>
-            <IconButton onClick={() => setOpen(true)}> <EditSquareIcon color={selectedRows.length === 1 ? "info" : "disabled"} /> </IconButton>
+            {/* <IconButton onClick={() => setOpen(true)}> <EditSquareIcon color={selectedRows.length === 1 ? "info" : "disabled"} /> </IconButton> */}
             <IconButton onClick={() => deleteUsers()}> <DeleteIcon color={!!selectedRows.length ? "error" : "disabled"} /> </IconButton>
-            {/* {!!selectedRows.length && <IconButton onClick={() => deleteMaterials()}> <DeleteIcon color="error" /> </IconButton>} */}
 
         </div>
         
