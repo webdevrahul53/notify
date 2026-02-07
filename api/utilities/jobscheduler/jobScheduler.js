@@ -2,33 +2,30 @@ import { initAgenda } from "../../config/agendaConfig.js";
 import Account from "../../model/account.js";
 import Birthday from "../../model/birthday.js";
 import Event from "../../model/event.js";
-import moment from "moment";
+import moment from "moment-timezone";
 import { defineEventMailJob } from "./jobs/eventMailNotifJob.js";
 import { defineDobMailJob } from "./jobs/dobMailNotifJob.js";
 
-// Scheduler Refresh Timespan
+/* ------------------------------------------------------------------ */
+/* CONFIG */
+/* ------------------------------------------------------------------ */
+
+const TIMEZONE = "Asia/Kolkata";
+
 const DEFAULT_REFRESH_MS = process.env.REMINDER_REFRESH_INTERVAL_MS
   ? parseInt(process.env.REMINDER_REFRESH_INTERVAL_MS, 10)
-  : 60 * 1000; // 10 seconds
+  : 60 * 1000;
 
-// DOB Schedule Time Configs
-const DOB_HOUR = process.env.DOB_SCHEDULE_HOUR
-  ? parseInt(process.env.DOB_SCHEDULE_HOUR, 10)
-  : 9;
-const DOB_MINUTE = process.env.DOB_SCHEDULE_MINUTE
-  ? parseInt(process.env.DOB_SCHEDULE_MINUTE, 10)
-  : 0;
+const DOB_HOUR = Number(process.env.DOB_SCHEDULE_HOUR ?? 9);
+const DOB_MINUTE = Number(process.env.DOB_SCHEDULE_MINUTE ?? 0);
 
-// Event Schedule Time Configs
-const EVENT_HOUR = process.env.EVENT_SCHEDULE_HOUR
-  ? parseInt(process.env.EVENT_SCHEDULE_HOUR, 10)
-  : 9; // 9 AM
-const EVENT_MINUTE = process.env.EVENT_SCHEDULE_MINUTE
-  ? parseInt(process.env.EVENT_SCHEDULE_MINUTE, 10)
-  : 0; // 00 Minutes
+const EVENT_HOUR = Number(process.env.EVENT_SCHEDULE_HOUR ?? 9);
+const EVENT_MINUTE = Number(process.env.EVENT_SCHEDULE_MINUTE ?? 0);
 
+/* ------------------------------------------------------------------ */
+/* DATA FETCHERS */
+/* ------------------------------------------------------------------ */
 
-// define all job details --------------------------------------------------------------------------------
 export const getDobDetails = async (req, res) => {
   try {
     const today = moment();
@@ -113,113 +110,96 @@ export const getEventDetails = async (req, res) => {
   }
 }
 
-// scheduling all events ---------------------------------------------------------------------------------
+/* ------------------------------------------------------------------ */
+/* DOB SCHEDULER (ONE-TIME PER DAY) */
+/* ------------------------------------------------------------------ */
+
 const scheduleDobRecords = async (agenda, dobRecords) => {
-  if (!dobRecords || !dobRecords.length) return;
-  const now = moment.tz("Asia/Kolkata");
+  const now = moment.tz(TIMEZONE);
 
   for (const dob of dobRecords) {
-    if (!dob?.scheduleDate) continue;
+    const jobKey = `DOB-${now.format("YYYY-MM-DD")}`;
 
-    // 🔹 Define scheduled time (customizable)
-    const hour = DOB_HOUR || 0;   // default 00
-    const minute = DOB_MINUTE || 0; // default 00
-
-    // 🔹 Build DOB for current year
     let scheduleAt = moment
-      .tz(dob.scheduleDate, "DD-MM-YYYY", "Asia/Kolkata")
-      .year(now.year())
-      .set({ hour, minute, second: 0, millisecond: 0 });
+      .tz(dob.scheduleDate, "DD-MM-YYYY", TIMEZONE)
+      .set({ hour: DOB_HOUR, minute: DOB_MINUTE, second: 0, millisecond: 0 });
 
-    if (!scheduleAt.isValid()) continue;
+    // if (scheduleAt.isBefore(now)) {
+    //   // Missed time → run in 1 minute
+    //   scheduleAt = now.clone().add(1, "minute");
+    // }
 
-    // console.log(scheduleAt.isAfter(now));
-    // 🔹 Schedule safely
+    console.log(`🎂 DOB scheduled at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
     if (scheduleAt.isAfter(now)) {
       await agenda.schedule(
         scheduleAt.toDate(),
         "send dob notification",
-        { dob },
-        { unique: { "data.dob._id": dob._id } }
+        { dob, jobKey },
+        { unique: { "data.jobKey": jobKey } }
       );
-      console.log('Scheduler scheduled for dob:', dob.subject);
-      console.log(`🎂 DOB Scheduled at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
     }
   }
 };
+
+/* ------------------------------------------------------------------ */
+/* EVENT SCHEDULER (REFRESHABLE) */
+/* ------------------------------------------------------------------ */
+
 const scheduleEventRecords = async (agenda, eventRecords) => {
-  if (!eventRecords || !eventRecords.length) return;
-  const now = moment.tz("Asia/Kolkata");
+  const now = moment.tz(TIMEZONE);
 
   for (const event of eventRecords) {
-    if (!event?.scheduleDate) continue;
+    const scheduleAt = moment(event.scheduleDate)
+      .tz(TIMEZONE)
+      .set({ hour: EVENT_HOUR, minute: EVENT_MINUTE, second: 0, millisecond: 0 });
 
-    // 🔹 Define scheduled time (customizable)
-    const hour = EVENT_HOUR || 0;   // default 00
-    const minute = EVENT_MINUTE || 0; // default 00
+    if (!scheduleAt.isAfter(now)) continue;
 
-    // 🔹 Build scheduled datetime
-    const scheduleAt = moment.tz(event.scheduleDate, "Asia/Kolkata").set({ hour, minute, second: 0, millisecond: 0 });
+    const jobKey = `EVENT-${event._id}-${scheduleAt.format("YYYY-MM-DD")}`;
 
-    if (!scheduleAt.isValid()) continue;
+    const job = agenda.create(
+      "send event notification",
+      { event, jobKey }
+    );
 
-    // 🔹 Schedule only if time is in future
-    if (scheduleAt.isAfter(now)) {
-      await agenda.schedule(
-        scheduleAt.toDate(),
-        "send event notification",
-        { event },
-        { unique: { "data.event._id": event._id } }
-      );
-      console.log('Scheduler scheduled for event:', event.subject);
-      console.log(`🕓 EVENT Scheduled at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
-    }
+    job.unique(
+      { "data.jobKey": jobKey },
+      { insertOnly: true } // 🚨 THIS is the fix
+    );
+
+    job.schedule(scheduleAt.toDate());
+
+    await job.save();
+
+    console.log(`🕓 Event scheduled at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
   }
 };
 
+/* ------------------------------------------------------------------ */
+/* MAIN BOOTSTRAP */
+/* ------------------------------------------------------------------ */
 
-// map jobs with scheduler -------------------------------------------------------------------------------
 export const setupJobs = async () => {
   const agenda = await initAgenda();
+
   defineDobMailJob(agenda);
   defineEventMailJob(agenda);
 
-  try {
-    // dob notification
-    await agenda.cancel({ name: "send dob notification" });
-    const dobRecords = await getDobDetails();
-    await scheduleDobRecords(agenda, dobRecords);
+  await agenda.start();
 
-    // event notification
-    await agenda.cancel({ name: "send event notification" });
-    const eventRecords = await getEventDetails();
-    await scheduleEventRecords(agenda, eventRecords);
+  // 🔹 Initial run
+  await scheduleDobRecords(agenda, await getDobDetails());
+  await scheduleEventRecords(agenda, await getEventDetails());
 
-    console.log("✅ Initial Agenda jobs scheduled");
-  } catch (err) {
-    console.error("Error scheduling initial jobs:", err);
-  }
+  console.log("✅ Agenda initialized");
 
-  // Periodic refresh — will cancel and re-schedule updated expiry jobs
+  // 🔁 Event refresh ONLY
   setInterval(async () => {
     try {
-      console.log("🔁 Refreshing scheduled jobs...");
-
-      // dob notification
-      await agenda.cancel({ name: "send dob notification" });
-      const dobRecords = await getDobDetails();
-      await scheduleDobRecords(agenda, dobRecords);
-
-      // event notification
-      await agenda.cancel({ name: "send event notification" });
-      const eventRecords = await getEventDetails();
-      await scheduleEventRecords(agenda, eventRecords);
-
-      console.log('Scheduler running...');
-
-      console.log("✅ Reminder jobs refreshed successfully");
+      await scheduleEventRecords(agenda, await getEventDetails());
+      console.log("🔁 Event scheduler refreshed");
     } catch (err) {
-      console.error("Error refreshing reminder jobs:", err);
+      console.error("Scheduler refresh error:", err);
     }
   }, DEFAULT_REFRESH_MS);
 };
