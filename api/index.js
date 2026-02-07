@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import usersRouter from './router/users.js';
 import connectDB from './config/db.js';
 import activityRouter from './router/activity.js';
@@ -10,9 +12,11 @@ import accountRouter from './router/account.js';
 import eventRouter from './router/event.js';
 import birthdayRouter from './router/birthday.js';
 import { setupJobs } from './utilities/jobscheduler/jobScheduler.js';
-dotenv.config();
 
+dotenv.config();
 await connectDB();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const allowedOrigins = {
     dev: {
