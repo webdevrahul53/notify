@@ -1,8 +1,8 @@
 const dotenv = require("dotenv");
 dotenv.config();
 
-const env = process.env.NODE_ENV || "production";
-const appenv = process.env.APP_ENV || "quality";
+const apienv = process.env.NODE_ENV || "live";
+const appenv = process.env.APP_ENV || "production";
 
 const apiName = {
   quality: process.env.API_NAME_QAS,
@@ -25,7 +25,7 @@ module.exports = {
 
       env: {
         PORT: portDetails[appenv] || 3042,
-        NODE_ENV: env,
+        NODE_ENV: apienv,
         APP_ENV: appenv,
       },
     },
