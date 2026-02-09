@@ -6,7 +6,7 @@ const eventSchema = new mongoose.Schema(
         activityId: { type: mongoose.Types.ObjectId, ref: "Activity", required: true },
         accountId: [{ type: mongoose.Types.ObjectId, ref: "Account" }],
         subject: { type: String, required: true },
-        title: { type: String, required: true },
+        title: { type: String },
         contentImage: { type: mongoose.Types.ObjectId, ref: "uploads.files", required: true, },
         status: { type: Boolean,  default: true }
     },
