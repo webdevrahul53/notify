@@ -11,7 +11,7 @@ const dbUrl = appenv === 'production'
     ? (env === 'live' ? (console.log('Live (Production Server)'), `${dbUrlConn}notifyprddb?appName=notifyapp`) : (console.log('Dev (Production Server)'), `${dbUrlConn}notifydb?appName=notifyapp`))
     : (env === 'live' ? (console.log('Live (Quality Server)'), `${dbUrlConn}notifyqasdb?appName=notifyapp`) : (console.log('Dev (Quality Server)'), `${dbUrlConn}notifydb?appName=notifyapp`));
 
-
+console.log(dbUrl);
 export const initAgenda = async () => {
     if (agenda) return agenda;
 
@@ -24,6 +24,7 @@ export const initAgenda = async () => {
     });
 
     await agenda.start();
+    // console.log(agenda);
     agenda.on("ready", () => console.log("Agenda ready"));
     agenda.on("error", err => console.error("Agenda error", err));
     agenda.on("start", job => {
