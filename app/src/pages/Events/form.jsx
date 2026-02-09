@@ -274,7 +274,6 @@ export default function AddEditEvent() {
             <textarea id="title" cols={80} rows={5} style={{padding: "10px", marginTop: "1rem"}}
                 placeholder="Enter Mail Text Here ..."
                 {...register("title", {
-                required: false,
                 maxLength: {
                     value: 500,
                     message: "Maximum 500 characters allowed"
