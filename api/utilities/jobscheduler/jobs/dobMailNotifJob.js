@@ -21,6 +21,7 @@ export const defineDobMailJob = (agenda) => {
     try {
         agenda.define("send dob notification", async job => {
             // console.log("Sending dob notification", job.attrs.data);
+            // console.log('x1');
             const { dob } = job.attrs.data;
             const mailResponse = await emailInfo(dob);
             if (mailResponse.success) console.log(`✅ Reminder successfully sent to All Recipients for dob ${dob?.subject}`);
