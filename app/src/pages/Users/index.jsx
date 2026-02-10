@@ -131,6 +131,10 @@ export default function Users() {
             {/* <IconButton onClick={() => setOpen(true)}> <EditSquareIcon color={selectedRows.length === 1 ? "info" : "disabled"} /> </IconButton> */}
             <IconButton onClick={() => deleteUsers()}> <DeleteIcon color={!!selectedRows.length ? "error" : "disabled"} /> </IconButton>
 
+            <div>
+              
+            </div>
+
         </div>
         
         <Card>
