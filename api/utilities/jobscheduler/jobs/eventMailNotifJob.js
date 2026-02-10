@@ -19,11 +19,18 @@ export const emailInfo = async (event) => {
 
 export const defineEventMailJob = (agenda) => {
     try {
-        agenda.define("send event notification", async job => {
+        agenda.define("send event notification", {
+            concurrency: 1,              // 🔒 only one at a time
+            lockLifetime: 10 * 60 * 1000  // 🔒 prevent duplicate locks
+        }, async job => {
             // console.log("Sending event notification", job.attrs.data);
             const { event } = job.attrs.data;
             const mailResponse = await emailInfo(event);
-            if (mailResponse.success) console.log(`✅ Reminder successfully sent to All Recipients for event ${event?.activity?.activityName}`);
+            if (mailResponse.success) {
+                console.log(`✅ Reminder successfully sent to All Recipients for event ${event?.activity?.activityName}`)
+                // 🔥 THIS LINE FIXES EVERYTHING
+                await job.remove();   // ❗❗❗ REQUIRED
+            }
             else console.log(`✅ Event Reminder sending Failed for ${event?.activity?.activityName}`);
         });
     } catch (error) {

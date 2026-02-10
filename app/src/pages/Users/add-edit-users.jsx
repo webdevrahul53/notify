@@ -75,7 +75,10 @@ const AddEditUsers = (props) => {
                 </div>
                 {!props?.user && <div className="input-container"> 
                     <TextField label="Password" variant="filled" fullWidth 
-                        {...register("password", { required: "Password is required" })}
+                        {...register("password", { 
+                            required: "Password is required",
+                            minLength: { value: 6, message: "Minimum 6 characters" },
+                         })}
                         error={!!errors.password} helperText={errors.password?.message}
                     /> 
                 </div>}
