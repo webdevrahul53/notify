@@ -65,14 +65,13 @@ export default function MiniDrawer() {
   }
 
   const handleAction = (text) => () => {
-    if(text === 'Logout') {
-      handleLogout()
-    }
+    if(text === 'Logout') handleLogout()
+    if(text === 'Settings') navigate('/settings');
   };  
   
   const sessionMenuData = [
     { title: 'Profile', icon: <Avatar />, onClick: handleAction('Profile') }, // Another simple item
-    // { title: 'Settings', icon: <Settings />, onClick: handleAction('Settings') }, // Another simple item
+    { title: 'Settings', icon: <Settings />, onClick: handleAction('Settings') }, // Another simple item
     { title: 'Logout', icon: <Logout />, onClick: handleAction('Logout') }, // Another simple item
   ];
 
