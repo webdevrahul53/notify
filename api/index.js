@@ -15,7 +15,6 @@ import { setupJobs } from './utilities/jobscheduler/jobScheduler.js';
 import settingRouter from './router/setting.js';
 dotenv.config();
 
-dotenv.config();
 await connectDB();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
