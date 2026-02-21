@@ -12,8 +12,9 @@ import accountRouter from './router/account.js';
 import eventRouter from './router/event.js';
 import birthdayRouter from './router/birthday.js';
 import { setupJobs } from './utilities/jobscheduler/jobScheduler.js';
-
+import settingRouter from './router/setting.js';
 dotenv.config();
+
 await connectDB();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,6 +73,7 @@ app.use("/api/activity", activityRouter)
 app.use("/api/account", accountRouter)
 app.use("/api/event", eventRouter)
 app.use("/api/birthday", birthdayRouter)
+app.use("/api/settings", settingRouter)
 
 // static frontend delivery
 if (apienv === 'live') {
