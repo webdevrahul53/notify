@@ -2,6 +2,7 @@ import { Suspense, lazy } from "react";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import ProtectedRoute from "../guards/protected-routes";
 import Loader from "../components/loader";
+import Settings from "../pages/Settings";
 
 // Lazy loaded components
 const Layout = lazy(() => import("../components/Layout")); // MiniDrawer
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
       { path: "activity", element: <Activity />, },
       { path: "users", element: <Users />, },
       { path: "accounts", element: <Accounts />, },
+      { path: "settings", element: <Settings />, },
 
 
     ],
