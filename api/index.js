@@ -11,6 +11,7 @@ import activityRouter from './router/activity.js';
 import accountRouter from './router/account.js';
 import eventRouter from './router/event.js';
 import birthdayRouter from './router/birthday.js';
+import mailRouter from './router/mailRoutes.js';
 import { setupJobs } from './utilities/jobscheduler/jobScheduler.js';
 import settingRouter from './router/setting.js';
 dotenv.config();
@@ -74,6 +75,7 @@ app.use("/api/account", accountRouter)
 app.use("/api/event", eventRouter)
 app.use("/api/birthday", birthdayRouter)
 app.use("/api/settings", settingRouter)
+app.use("/api/send-mail", mailRouter)
 
 // static frontend delivery
 if (apienv === 'live') {

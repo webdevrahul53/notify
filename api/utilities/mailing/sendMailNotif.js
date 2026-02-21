@@ -1,4 +1,5 @@
-import { mailConfig } from "../../config/mailConfig.js";
+// import { mailConfig } from "../../config/mailConfig.js";
+import { mailConfig } from "../../config/mailConfig";
 
 export const sendMailNotif = async (notificationDetails, htmlContent, attachment=[]) => {
     try {
