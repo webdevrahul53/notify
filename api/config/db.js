@@ -16,7 +16,7 @@ const dbnm = appenv === 'production'
 
 mongoose.set('strictQuery', false); // Disable strict query mode
 
-console.log(dbUrl);
+// console.log(dbUrl);
 
 const connectDB = async () => {
     try {

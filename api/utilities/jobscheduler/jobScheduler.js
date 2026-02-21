@@ -124,10 +124,10 @@ const scheduleDobRecords = async (agenda, dobRecords) => {
       .tz(dob.scheduleDate, "DD-MM-YYYY", TIMEZONE)
       .set({ hour: DOB_HOUR, minute: DOB_MINUTE, second: 0, millisecond: 0 });
 
-    // if (scheduleAt.isBefore(now)) {
-    //   // Missed time → run in 1 minute
-    //   scheduleAt = now.clone().add(1, "minute");
-    // }
+    if (scheduleAt.isBefore(now)) {
+      // Missed time → run in 1 minute
+      scheduleAt = now.clone().add(1, "minute");
+    }
 
     console.log(`🎂 DOB scheduled at ${scheduleAt.format("DD-MM-YYYY HH:mm:ss")}`);
     if (scheduleAt.isAfter(now)) {
@@ -182,10 +182,12 @@ const scheduleEventRecords = async (agenda, eventRecords) => {
 export const setupJobs = async () => {
   const agenda = await initAgenda();
 
+  // console.log(agenda);
+
   defineDobMailJob(agenda);
   defineEventMailJob(agenda);
 
-  await agenda.start();
+  // await agenda.start();
 
   // 🔹 Initial run
   await scheduleDobRecords(agenda, await getDobDetails());
